@@ -1,0 +1,36 @@
+on:
+  release:
+    types: [created]
+  pull_request:
+
+jobs:
+  apiary:
+    name: apiary ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86_64-apple-darwin]
+    steps:
+      - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f
+
+      - run: rustup toolchain install stable --profile minimal
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Compile and release
+        id: compile
+        uses: rust-build/rust-build.action@v1.4.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SRC_DIR: "tools/apiary"
+        with:
+          RUSTTARGET: ${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: apiary ${{ matrix.target }}
+          path: |
+            ${{ steps.compile.outputs.BUILT_ARCHIVE }}
+            ${{ steps.compile.outputs.BUILT_CHECKSUM }}
