@@ -24,3 +24,10 @@ Options:
   -V, --version              Print version
 ```
 
+Try using piping output to `jq` like this:
+
+```bash 
+ $ apiary --api_key=$HONEYCOMB_API_KEY --dataset="<dataset name>" --resource="columns" \
+         | jq --raw-output '.[] | "\(.key_name) \(.id)"';
+
+```
