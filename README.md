@@ -27,7 +27,5 @@ Options:
 Try piping output to `jq` like this:
 
 ```bash 
- $ apiary --api-key=$HONEYCOMB_API_KEY --dataset="<dataset name>" --resource="columns" \
-         | jq --raw-output '.[] | "\(.key_name) \(.id)"';
-
+apiary --api-key=$HONEYCOMB_API_KEY --dataset="<dataset>" --resource="columns" | jq --raw-output '.[] | "\(.key_name) \(.id)"'
 ```
