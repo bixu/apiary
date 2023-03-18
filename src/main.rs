@@ -5,7 +5,7 @@ use tokio;
 #[derive(Parser)]
 #[command(name = "apiary")]
 #[command(author = "Blake")]
-#[command(version = "1.0")]
+#[command(version = "0.2.0")]
 #[command(about = "A command-line interface to the Honeycomb API", long_about = None)]
 struct Cli {
     #[arg(short, long)]
