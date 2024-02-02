@@ -1,37 +1,56 @@
 on:
   release:
     types: [created]
-  pull_request:
 
 jobs:
   apiary:
-    name: apiary ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    name: apiary ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - x86_64-apple-darwin
-          - aarch64-apple-darwin
+        os:
+          - macos-13
+          - macos-14
     steps:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
 
+      - id: build
+        run: |
+
+          set -x
+          if uname -m | grep -q x86_64 && uname -s | grep Darwin
+          then
+            export TARGET=x86_64-apple-darwin
+          fi
+
+          if uname -m | grep -q arm64 && uname -s | grep Darwin
+          then
+            export TARGET=aarch64-apple-darwin
+          fi
+          set +x
+
+          uname -a
+          echo "Rust target is $TARGET"
+          echo "target=$TARGET" >> $GITHUB_OUTPUT
+
       - run: rustup toolchain install stable --profile minimal
 
-      - uses: Swatinem/rust-cache@v2
+      - run: rustup target add ${{ steps.build.outputs.target }}
+
+      - uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84
 
       - name: Compile and release
         id: compile
-        uses: rust-build/rust-build.action@v1.4.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          RUSTTARGET: ${{ matrix.target }}
+          RUSTTARGET: ${{ steps.build.outputs.target }}
+        run: |
+          cargo build --release --target "${RUSTTARGET}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
-          name: apiary ${{ matrix.target }}
+          name: apiary ${{ steps.build.outputs.target }}
           path: |
-            ${{ steps.compile.outputs.BUILT_ARCHIVE }}
-            ${{ steps.compile.outputs.BUILT_CHECKSUM }}
+            target/${{ steps.build.outputs.target }}/release/apiary
