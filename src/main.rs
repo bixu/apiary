@@ -1,11 +1,9 @@
 use clap::Parser;
-use reqwest;
-use tokio;
 
 #[derive(Parser)]
 #[command(name = "apiary")]
 #[command(author = "Blake")]
-#[command(version = "0.2.0")]
+#[command(version = "0.3.0")]
 #[command(about = "A command-line interface to the Honeycomb API", long_about = None)]
 struct Cli {
     #[arg(short, long)]
@@ -13,18 +11,26 @@ struct Cli {
     #[arg(short, long)]
     dataset: String,
     #[arg(short, long)]
-    resource: String,
+    endpoint: String,
+    #[arg(short, long)]
+    id: Option<String>,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
     let cli = Cli::parse();
 
-    let url = format!("https://api.honeycomb.io/1/{}/{}", cli.resource, cli.dataset);
+    let url = format!("https://api.honeycomb.io/1/{}/{}/{}?detailed=true",
+                      cli.endpoint,
+                      cli.dataset,
+                      cli.id.unwrap_or_else(|| "".to_string())
+                     );
 
     let client = reqwest::Client::new();
+    // https://docs.honeycomb.io/api/tag/SLOs#operation/getSlo
+    let url_clone = url.clone(); // avoid borrow-checker errors
     let response = client
-        .get(url)
+        .get(url_clone) // Use the cloned `url` variable
         .header("x-honeycomb-team", cli.api_key)
         .send()
         .await
@@ -33,6 +39,7 @@ async fn main() -> Result<(), reqwest::Error> {
         .await
         .expect("failed to get payload");
 
-        println!("{}", response);
+    eprintln!("Requesting: {}", url);
+    println!("{}", response);
     Ok(())
 }
