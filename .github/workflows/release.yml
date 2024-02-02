@@ -43,16 +43,15 @@ jobs:
 
       - name: Compile and release
         id: compile
-        uses: rust-build/rust-build.action@58ff99792e9c81ac6581731903d1a3d3f9c399f9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
           RUSTTARGET: ${{ steps.build.outputs.target }}
+        run: |
+          cargo build --release --target "${RUSTTARGET}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
           name: apiary ${{ steps.build.outputs.target }}
           path: |
-            ${{ steps.compile.outputs.BUILT_ARCHIVE }}
-            ${{ steps.compile.outputs.BUILT_CHECKSUM }}
+            target/${{ steps.compile.outputs.BUILT_ARCHIVE }}/release/apiary
