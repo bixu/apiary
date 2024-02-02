@@ -16,6 +16,19 @@ jobs:
     steps:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
 
+      - run: |
+          if uname -m | grep -q x86_64 && uname -s | grep Darwin
+          then
+            export TARGET=x86_64-apple-darwin
+          fi
+
+          if uname -m | grep -q arm64 && uname -s | grep Darwin
+          then
+            export TARGET=aarch64-apple-darwin
+          fi
+
+          echo "::set-env name=TARGET::${{ matrix.target }}"
+
       - run: rustup toolchain install stable --profile minimal
 
       - run: rustup target add ${{ matrix.target }}
@@ -24,14 +37,14 @@ jobs:
 
       - name: Compile and release
         id: compile
-        uses: rust-build/rust-build.action@v1.4.4
+        uses: rust-build/rust-build.action@58ff99792e9c81ac6581731903d1a3d3f9c399f9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           RUSTTARGET: ${{ matrix.target }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
           name: apiary ${{ matrix.target }}
           path: |
