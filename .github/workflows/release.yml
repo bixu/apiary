@@ -10,13 +10,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - x86_64-apple-darwin
-          - aarch64-apple-darwin
+        os:
+          - macos-13
+          - macos-14
     steps:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
 
-      - run: |
+      - id: build
+        run: |
           if uname -m | grep -q x86_64 && uname -s | grep Darwin
           then
             export TARGET=x86_64-apple-darwin
@@ -27,11 +28,11 @@ jobs:
             export TARGET=aarch64-apple-darwin
           fi
 
-          echo "::set-env name=TARGET::${{ matrix.target }}"
+          echo "target=$TARGET" >> "$GITHUB_ENV"
 
       - run: rustup toolchain install stable --profile minimal
 
-      - run: rustup target add ${{ matrix.target }}
+      - run: rustup target add ${{ steps.build.outputs.target }}
 
       - uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84
 
@@ -41,12 +42,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          RUSTTARGET: ${{ matrix.target }}
+          RUSTTARGET: ${{ steps.build.outputs.target }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
         with:
-          name: apiary ${{ matrix.target }}
+          name: apiary ${{ steps.build.outputs.target }}
           path: |
             ${{ steps.compile.outputs.BUILT_ARCHIVE }}
             ${{ steps.compile.outputs.BUILT_CHECKSUM }}
