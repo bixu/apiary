@@ -1,6 +1,7 @@
 on:
   release:
     types: [created]
+  pull_request:
 
 jobs:
   apiary:
@@ -48,9 +49,8 @@ jobs:
         run: |
           cargo build --release --target "${RUSTTARGET}"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
+      - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
         with:
-          name: apiary ${{ steps.build.outputs.target }}
-          path: |
-            target/${{ steps.build.outputs.target }}/release/apiary
+          artifacts: target/${{ steps.build.outputs.target }}/release/apiary
+          generateReleaseNotes: true
+          prerelease: true
