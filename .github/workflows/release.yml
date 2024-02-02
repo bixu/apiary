@@ -35,6 +35,10 @@ jobs:
           echo "Rust target is $TARGET"
           echo "target=$TARGET" >> $GITHUB_OUTPUT
 
+          apiary_version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "apiary") | .version')
+          echo "Apiary version is ${apiary_version}"
+          echo "apiary_version=$APIARY_VERSION" >> $GITHUB_OUTPUT
+
       - run: rustup toolchain install stable --profile minimal
 
       - run: rustup target add ${{ steps.build.outputs.target }}
@@ -54,3 +58,4 @@ jobs:
           artifacts: target/${{ steps.build.outputs.target }}/release/apiary
           generateReleaseNotes: true
           prerelease: true
+          tag: ${{ steps.build.outputs.apiary_version }}
