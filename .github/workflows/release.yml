@@ -53,9 +53,19 @@ jobs:
         run: |
           cargo build --release --target "${RUSTTARGET}"
 
+      - name: Create tag
+        uses: actions/github-script@v5
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ steps.build.outputs.apiary_version }}',
+              sha: context.sha
+            })
+
       - uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5
         with:
           artifacts: target/${{ steps.build.outputs.target }}/release/apiary
           generateReleaseNotes: true
           prerelease: true
-          tag: ${{ steps.build.outputs.apiary_version }}
