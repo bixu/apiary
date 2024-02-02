@@ -54,4 +54,4 @@ jobs:
         with:
           name: apiary ${{ steps.build.outputs.target }}
           path: |
-            target/${{ steps.compile.outputs.BUILT_ARCHIVE }}/release/apiary
+            target/${{ steps.build.outputs.target }}/release/apiary
