@@ -10,22 +10,16 @@ Getting help via the `--help` command:
 
 ```bash
 $ cargo run -- --help
-    Finished dev [unoptimized + debuginfo] target(s) in 0.05s
-     Running `target/debug/apiary --help`
-A command-line interface to the Honeycomb API
-
-Usage: apiary --api-key <API_KEY> --dataset <DATASET> --resource <RESOURCE>
-
-Options:
-  -a, --api-key <API_KEY>
-  -d, --dataset <DATASET>
-  -r, --resource <RESOURCE>
-  -h, --help                 Print help
-  -V, --version              Print version
 ```
 
 Try piping output to `jq` like this:
 
 ```bash 
-apiary --api-key=$HONEYCOMB_API_KEY --dataset="<dataset>" --resource="columns" | jq --raw-output '.[] | "\(.key_name) \(.id)"'
+cargo run -- --api-key=$HONEYCOMB_API_KEY --dataset="<dataset>" --resource="columns" | jq --raw-output '.[] | "\(.key_name) \(.id)"'
+```
+
+## Building
+
+```bash
+$ cargo build
 ```
