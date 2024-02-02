@@ -28,7 +28,7 @@ jobs:
             export TARGET=aarch64-apple-darwin
           fi
 
-          echo "target=$TARGET" >> "$GITHUB_ENV"
+          echo "target=$TARGET" >> $GITHUB_OUTPUT
 
       - run: rustup toolchain install stable --profile minimal
 
