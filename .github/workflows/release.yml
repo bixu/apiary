@@ -5,7 +5,7 @@ on:
 
 jobs:
   apiary:
-    name: apiary ${{ matrix.target }}
+    name: apiary ${{ matrix.os }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
