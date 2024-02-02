@@ -31,6 +31,7 @@ jobs:
           fi
           set +x
 
+          echo "Rust target is $TARGET"
           echo "target=$TARGET" >> $GITHUB_OUTPUT
 
       - run: rustup toolchain install stable --profile minimal
