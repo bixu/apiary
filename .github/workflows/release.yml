@@ -31,6 +31,7 @@ jobs:
           fi
           set +x
 
+          uname -a
           echo "Rust target is $TARGET"
           echo "target=$TARGET" >> $GITHUB_OUTPUT
 
