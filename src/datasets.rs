@@ -9,9 +9,9 @@ use serde_json::Value;
 pub enum DatasetCommands {
     /// List all datasets
     List {
-        /// Team slug (required for environment validation)
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long)]
-        team: String,
+        team: Option<String>,
         /// Environment slug (required)
         #[arg(short, long)]
         environment: String,
@@ -69,13 +69,17 @@ pub struct Dataset {
 }
 
 impl DatasetCommands {
-    pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, global_team: &Option<String>) -> Result<()> {
         match self {
             DatasetCommands::List {
                 team,
                 environment,
                 format,
-            } => list_datasets(client, team, environment, format).await,
+            } => {
+                let effective_team = team.as_ref().or(global_team.as_ref())
+                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                list_datasets(client, effective_team, environment, format).await
+            }
             DatasetCommands::Get { dataset, format } => get_dataset(client, dataset, format).await,
             DatasetCommands::Create { data, format } => create_dataset(client, data, format).await,
             DatasetCommands::Update {

@@ -386,7 +386,7 @@ fn display_resource_usage() {
 async fn execute_command(client: &HoneycombClient, command: Commands, team: &Option<String>) -> Result<()> {
     match command {
         Commands::Auth { command } => command.execute(client).await,
-        Commands::Datasets { command } => command.execute(client).await,
+        Commands::Datasets { command } => command.execute(&client, team).await,
         Commands::Columns { command } => command.execute(client).await,
         Commands::Triggers { command } => command.execute(client).await,
         Commands::Queries { command } => command.execute(client).await,
