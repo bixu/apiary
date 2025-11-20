@@ -576,8 +576,6 @@ mod marker_settings {
     }
 }
 
-
-
 /// Test Auth endpoints
 mod auth {
     use super::*;

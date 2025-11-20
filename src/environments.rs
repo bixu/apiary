@@ -114,7 +114,11 @@ pub struct EnvironmentSettings {
 }
 
 impl EnvironmentCommands {
-    pub async fn execute(&self, client: &HoneycombClient, global_team: &Option<String>) -> Result<()> {
+    pub async fn execute(
+        &self,
+        client: &HoneycombClient,
+        global_team: &Option<String>,
+    ) -> Result<()> {
         match self {
             EnvironmentCommands::List { team, format } => {
                 let effective_team = team.as_ref().or(global_team.as_ref())
@@ -140,12 +144,12 @@ impl EnvironmentCommands {
                 let effective_team = team.as_ref().or(global_team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
                 update_environment(client, effective_team, id, data, format).await
-            },
+            }
             EnvironmentCommands::Delete { team, id } => {
                 let effective_team = team.as_ref().or(global_team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
                 delete_environment(client, effective_team, id).await
-            },
+            }
         }
     }
 }

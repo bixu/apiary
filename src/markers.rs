@@ -71,9 +71,11 @@ pub struct Marker {
 impl MarkerCommands {
     pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
         match self {
-            MarkerCommands::List { dataset, environment, format } => {
-                list_markers(client, dataset, environment.as_deref(), format).await
-            },
+            MarkerCommands::List {
+                dataset,
+                environment,
+                format,
+            } => list_markers(client, dataset, environment.as_deref(), format).await,
             MarkerCommands::Create {
                 dataset,
                 data,
@@ -101,20 +103,28 @@ async fn list_markers(
 
     // If environment is provided, validate it exists
     if let Some(env) = environment {
-        let team = std::env::var("HONEYCOMB_TEAM")
-            .unwrap_or_else(|_| "default".to_string());
+        let team = std::env::var("HONEYCOMB_TEAM").unwrap_or_else(|_| "default".to_string());
         require_valid_environment(client, &team, env).await?;
     }
 
     let path = format!("/1/markers/{}", dataset);
-    
+
     // Add environment as query parameter if provided
     let mut query_params = HashMap::new();
     if let Some(env) = environment {
         query_params.insert("environment".to_string(), env.to_string());
     }
-    
-    let response = client.get(&path, if query_params.is_empty() { None } else { Some(&query_params) }).await?;
+
+    let response = client
+        .get(
+            &path,
+            if query_params.is_empty() {
+                None
+            } else {
+                Some(&query_params)
+            },
+        )
+        .await?;
 
     match format {
         OutputFormat::Json => {

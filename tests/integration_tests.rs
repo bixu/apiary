@@ -40,7 +40,7 @@ async fn test_datasets_list_requires_environment() {
 async fn test_datasets_list_requires_team() {
     let mut cmd = Command::new("cargo");
     cmd.args(["run", "--"]);
-    
+
     // Remove HONEYCOMB_TEAM to test fallback behavior
     cmd.env_remove("HONEYCOMB_TEAM");
 

@@ -99,7 +99,11 @@ pub struct ApiKeyPermissions {
 }
 
 impl ApiKeyCommands {
-    pub async fn execute(&self, client: &HoneycombClient, global_team: &Option<String>) -> Result<()> {
+    pub async fn execute(
+        &self,
+        client: &HoneycombClient,
+        global_team: &Option<String>,
+    ) -> Result<()> {
         match self {
             ApiKeyCommands::List { team, format } => {
                 let effective_team = team.as_ref().or(global_team.as_ref())
@@ -125,12 +129,12 @@ impl ApiKeyCommands {
                 let effective_team = team.as_ref().or(global_team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
                 update_api_key(client, effective_team, id, data, format).await
-            },
+            }
             ApiKeyCommands::Delete { team, id } => {
                 let effective_team = team.as_ref().or(global_team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
                 delete_api_key(client, effective_team, id).await
-            },
+            }
         }
     }
 }

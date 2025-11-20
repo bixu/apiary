@@ -112,9 +112,11 @@ pub struct SloFilter {
 impl SloCommands {
     pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
         match self {
-            SloCommands::List { dataset, environment, format } => {
-                list_slos(client, dataset, environment.as_deref(), format).await
-            },
+            SloCommands::List {
+                dataset,
+                environment,
+                format,
+            } => list_slos(client, dataset, environment.as_deref(), format).await,
             SloCommands::Get {
                 dataset,
                 id,
@@ -137,30 +139,38 @@ impl SloCommands {
 }
 
 async fn list_slos(
-    client: &HoneycombClient, 
-    dataset: &str, 
+    client: &HoneycombClient,
+    dataset: &str,
     environment: Option<&str>,
-    format: &OutputFormat
+    format: &OutputFormat,
 ) -> Result<()> {
     use crate::common::require_valid_environment;
     use std::collections::HashMap;
 
     // If environment is provided, validate it exists
     if let Some(env) = environment {
-        let team = std::env::var("HONEYCOMB_TEAM")
-            .unwrap_or_else(|_| "default".to_string());
+        let team = std::env::var("HONEYCOMB_TEAM").unwrap_or_else(|_| "default".to_string());
         require_valid_environment(client, &team, env).await?;
     }
 
     let path = format!("/1/slos/{}", dataset);
-    
+
     // Add environment as query parameter if provided
     let mut query_params = HashMap::new();
     if let Some(env) = environment {
         query_params.insert("environment".to_string(), env.to_string());
     }
-    
-    let response = client.get(&path, if query_params.is_empty() { None } else { Some(&query_params) }).await?;
+
+    let response = client
+        .get(
+            &path,
+            if query_params.is_empty() {
+                None
+            } else {
+                Some(&query_params)
+            },
+        )
+        .await?;
 
     match format {
         OutputFormat::Json => {

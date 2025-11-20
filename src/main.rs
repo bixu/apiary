@@ -157,15 +157,7 @@ enum Commands {
         #[command(subcommand)]
         command: marker_settings::MarkerSettingCommands,
     },
-
-
-
-
-
 }
-
-
-
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -296,7 +288,11 @@ fn display_resource_usage() {
     println!("For detailed help on any resource, use: apiary <resource> --help");
 }
 
-async fn execute_command(client: &HoneycombClient, command: Commands, team: &Option<String>) -> Result<()> {
+async fn execute_command(
+    client: &HoneycombClient,
+    command: Commands,
+    team: &Option<String>,
+) -> Result<()> {
     match command {
         Commands::Auth { command } => command.execute(client).await,
         Commands::Datasets { command } => command.execute(&client, team).await,

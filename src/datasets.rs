@@ -69,7 +69,11 @@ pub struct Dataset {
 }
 
 impl DatasetCommands {
-    pub async fn execute(&self, client: &HoneycombClient, global_team: &Option<String>) -> Result<()> {
+    pub async fn execute(
+        &self,
+        client: &HoneycombClient,
+        global_team: &Option<String>,
+    ) -> Result<()> {
         match self {
             DatasetCommands::List {
                 team,
