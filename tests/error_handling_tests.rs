@@ -272,8 +272,9 @@ mod connectivity {
 
         // Set a timeout to prevent the test from hanging
         let timeout_duration = std::time::Duration::from_secs(5);
-        let response = tokio::time::timeout(timeout_duration, client.get("/1/datasets", None)).await;
-        
+        let response =
+            tokio::time::timeout(timeout_duration, client.get("/1/datasets", None)).await;
+
         // The request should either timeout or fail with a connection error
         match response {
             Ok(result) => assert!(result.is_err()),
