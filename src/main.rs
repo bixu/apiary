@@ -70,7 +70,7 @@ struct Cli {
     verbose: bool,
 
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
@@ -274,32 +274,110 @@ async fn main() -> Result<()> {
     let client = HoneycombClient::new(management_key, config_key, cli.api_url);
 
     match cli.command {
-        Commands::Auth { command } => command.execute(&client).await,
-        Commands::Datasets { command } => command.execute(&client).await,
-        Commands::Columns { command } => command.execute(&client).await,
-        Commands::Triggers { command } => command.execute(&client).await,
-        Commands::Queries { command } => command.execute(&client).await,
-        Commands::Boards { command } => command.execute(&client).await,
-        Commands::Markers { command } => command.execute(&client).await,
-        Commands::Recipients { command } => command.execute(&client).await,
-        Commands::Slos { command } => command.execute(&client).await,
-        Commands::BurnAlerts { command } => command.execute(&client).await,
-        Commands::Environments { command } => command.execute(&client).await,
-        Commands::ApiKeys { command } => command.execute(&client).await,
-        Commands::CalculatedFields { command } => command.execute(&client).await,
-        Commands::DatasetDefinitions { command } => command.execute(&client).await,
-        Commands::MarkerSettings { command } => command.execute(&client).await,
-        Commands::QueryAnnotations { command } => command.execute(&client).await,
+        Some(command) => execute_command(&client, command).await,
+        None => {
+            display_resource_usage();
+            Ok(())
+        }
+    }
+}
+
+fn display_resource_usage() {
+    println!("Apiary - Comprehensive Honeycomb API CLI");
+    println!();
+    println!("SUPPORTED HONEYCOMB API RESOURCES:");
+    println!();
+    
+    println!("Authentication & Management:");
+    println!("  auth              - Authentication operations and token validation");
+    println!("  api-keys          - API key management (v2 Management API)");
+    println!("  environments      - Environment management (v2 Management API)");
+    println!();
+    
+    println!("Data & Schema:");
+    println!("  datasets          - Dataset management and configuration");
+    println!("  columns           - Column definitions and metadata");
+    println!("  calculated-fields - Derived column calculations");
+    println!("  dataset-definitions - Dataset schema definitions");
+    println!();
+    
+    println!("Queries & Analysis:");
+    println!("  queries           - Query creation, execution, and management");
+    println!("  query-results     - Query result retrieval and status");
+    println!("  query-annotations - Query annotation management");
+    println!("  boards            - Dashboard and board management");
+    println!();
+    
+    println!("Events & Data Ingestion:");
+    println!("  events            - Send events to Honeycomb datasets");
+    println!();
+    
+    println!("Alerting & Monitoring:");
+    println!("  triggers          - Alert trigger configuration");
+    println!("  slos              - Service Level Objective management");
+    println!("  burn-alerts       - SLO burn alert configuration");
+    println!("  recipients        - Notification recipient management");
+    println!();
+    
+    println!("Visualization & Annotation:");
+    println!("  markers           - Event marker management");
+    println!("  marker-settings   - Marker display configuration");
+    println!();
+    
+    println!("Service Management:");
+    println!("  service-maps      - Service dependency mapping");
+    println!("  reporting         - Historical SLO and metrics reporting");
+    println!();
+    
+    println!("USAGE:");
+    println!("  apiary <RESOURCE> --help           Show help for a specific resource");
+    println!("  apiary <RESOURCE> <COMMAND> --help Show help for a specific command");
+    println!();
+    
+    println!("EXAMPLES:");
+    println!("  apiary datasets list               List all datasets");
+    println!("  apiary queries create --help       Show query creation options");
+    println!("  apiary events --dataset my-dataset --data event.json");
+    println!("  apiary triggers list --dataset my-dataset");
+    println!();
+    
+    println!("AUTHENTICATION:");
+    println!("  Set HONEYCOMB_MANAGEMENT_API_KEY for v2 endpoints");
+    println!("  Set HONEYCOMB_CONFIGURATION_API_KEY for v1 endpoints");
+    println!("  Or use --management-key / --config-key flags");
+    println!();
+    
+    println!("For detailed help on any resource, use: apiary <resource> --help");
+}
+
+async fn execute_command(client: &HoneycombClient, command: Commands) -> Result<()> {
+    match command {
+        Commands::Auth { command } => command.execute(client).await,
+        Commands::Datasets { command } => command.execute(client).await,
+        Commands::Columns { command } => command.execute(client).await,
+        Commands::Triggers { command } => command.execute(client).await,
+        Commands::Queries { command } => command.execute(client).await,
+        Commands::Boards { command } => command.execute(client).await,
+        Commands::Markers { command } => command.execute(client).await,
+        Commands::Recipients { command } => command.execute(client).await,
+        Commands::Slos { command } => command.execute(client).await,
+        Commands::BurnAlerts { command } => command.execute(client).await,
+        Commands::Environments { command } => command.execute(client).await,
+        Commands::ApiKeys { command } => command.execute(client).await,
+        Commands::CalculatedFields { command } => command.execute(client).await,
+        Commands::DatasetDefinitions { command } => command.execute(client).await,
+        Commands::MarkerSettings { command } => command.execute(client).await,
+        Commands::QueryAnnotations { command } => command.execute(client).await,
         Commands::Events {
             dataset,
             data,
             batch,
-        } => send_events(&client, &dataset, &data, batch).await,
+        } => send_events(client, &dataset, &data, batch).await,
         Commands::QueryResults { dataset, command } => {
-            execute_query_result_command(&client, &dataset, command).await
+            execute_query_result_command(client, &dataset, command).await
         }
-        Commands::ServiceMaps { command } => execute_service_map_command(&client, command).await,
-        Commands::Reporting { command } => execute_reporting_command(&client, command).await,
+        Commands::ServiceMaps { command } => execute_service_map_command(client, command).await,
+        Commands::Reporting { command } => execute_reporting_command(client, command).await,
     }
 }
 
