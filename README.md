@@ -18,17 +18,8 @@ This CLI requires a **Management API Key** from Honeycomb. Management Keys provi
    export HONEYCOMB_API_KEY="hcxmk_your_management_key_here"
    ```
 
-### Why Management Keys?
-
-Management Keys are the modern standard for Honeycomb API access:
-- 🔒 **Unified Authentication**: Single key type for all endpoints
-- 🚀 **Full API Access**: Works with both v1 and v2 APIs
-- 🛡️ **Secure**: Uses standard Bearer token authentication
-- 🔄 **Future-Proof**: Recommended by Honeycomb for all new integrations
-
 ## Features
 
-- **Complete API Coverage**: All Honeycomb API v1 and v2 endpoints
 - **Management Key Authentication**: Modern Bearer token authentication
 - **Multiple Output Formats**: JSON, pretty-printed JSON, and table formats
 - **Environment Variables**: Support for API keys and configuration via environment variables
