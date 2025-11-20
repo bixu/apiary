@@ -126,8 +126,8 @@ async fn list_burn_alerts(
         OutputFormat::Table => {
             if let Value::Array(burn_alerts) = response {
                 println!(
-                    "{:<15} {:<15} {:<15} {:<15} {:<10} {}",
-                    "ID", "SLO ID", "Exhaustion", "Window", "Disabled", "Recipients"
+                    "{:<15} {:<15} {:<15} {:<15} {:<10} Recipients",
+                    "ID", "SLO ID", "Exhaustion", "Window", "Disabled"
                 );
                 println!("{:-<85}", "");
 

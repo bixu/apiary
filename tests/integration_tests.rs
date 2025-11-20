@@ -1,15 +1,11 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
-use serde_json::json;
-use wiremock::{
-    matchers::{method, path, query_param},
-    Mock, MockServer, ResponseTemplate,
-};
 
 /// Test CLI argument validation for datasets list command
 #[tokio::test]
 async fn test_datasets_list_requires_team_and_environment() {
-    let mut cmd = Command::cargo_bin("apiary").unwrap();
+    let mut cmd = Command::new("cargo");
+    cmd.args(["run", "--", "apiary"]);
 
     // Test missing both arguments
     cmd.arg("datasets")
@@ -25,7 +21,8 @@ async fn test_datasets_list_requires_team_and_environment() {
 
 #[tokio::test]
 async fn test_datasets_list_requires_environment() {
-    let mut cmd = Command::cargo_bin("apiary").unwrap();
+    let mut cmd = Command::new("cargo");
+    cmd.args(["run", "--", "apiary"]);
 
     // Test missing environment argument
     cmd.arg("datasets")
@@ -42,7 +39,8 @@ async fn test_datasets_list_requires_environment() {
 
 #[tokio::test]
 async fn test_datasets_list_requires_team() {
-    let mut cmd = Command::cargo_bin("apiary").unwrap();
+    let mut cmd = Command::new("cargo");
+    cmd.args(["run", "--", "apiary"]);
 
     // Test missing team argument
     cmd.arg("datasets")
@@ -60,7 +58,8 @@ async fn test_datasets_list_requires_team() {
 /// Test help output includes correct parameters
 #[tokio::test]
 async fn test_datasets_list_help_shows_required_params() {
-    let mut cmd = Command::cargo_bin("apiary").unwrap();
+    let mut cmd = Command::new("cargo");
+    cmd.args(["run", "--", "apiary"]);
 
     cmd.arg("datasets")
         .arg("list")
@@ -78,7 +77,8 @@ async fn test_datasets_list_help_shows_required_params() {
 /// Test short flags work correctly
 #[tokio::test]
 async fn test_datasets_list_short_flags() {
-    let mut cmd = Command::cargo_bin("apiary").unwrap();
+    let mut cmd = Command::new("cargo");
+    cmd.args(["run", "--", "apiary"]);
 
     // Test that short flags are properly recognized in help
     cmd.arg("datasets")

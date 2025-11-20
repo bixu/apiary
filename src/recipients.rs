@@ -92,8 +92,8 @@ async fn list_recipients(client: &HoneycombClient, format: &OutputFormat) -> Res
         OutputFormat::Table => {
             if let Value::Array(recipients) = response {
                 println!(
-                    "{:<15} {:<30} {:<15} {:<30} {}",
-                    "ID", "Name", "Type", "Target", "Created"
+                    "{:<15} {:<30} {:<15} {:<30} Created",
+                    "ID", "Name", "Type", "Target"
                 );
                 println!("{:-<95}", "");
 

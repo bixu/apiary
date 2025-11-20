@@ -123,8 +123,8 @@ async fn list_calculated_fields(
         OutputFormat::Table => {
             if let Value::Array(fields) = response {
                 println!(
-                    "{:<15} {:<30} {:<50} {}",
-                    "ID", "Alias", "Expression", "Created"
+                    "{:<15} {:<30} {:<50} Created",
+                    "ID", "Alias", "Expression"
                 );
                 println!("{:-<110}", "");
 

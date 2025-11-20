@@ -156,8 +156,8 @@ async fn list_environments(
                 serde_json::from_value::<EnvironmentsResponse>(response.clone())
             {
                 println!(
-                    "{:<35} {:<15} {:<25} {:<12} {}",
-                    "ID", "Name", "Slug", "Color", "Created"
+                    "{:<35} {:<15} {:<25} {:<12} Created",
+                    "ID", "Name", "Slug", "Color"
                 );
                 println!("{:-<95}", "");
 

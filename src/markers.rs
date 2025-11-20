@@ -103,8 +103,8 @@ async fn list_markers(
         OutputFormat::Table => {
             if let Value::Array(markers) = response {
                 println!(
-                    "{:<15} {:<50} {:<20} {:<10} {}",
-                    "ID", "Message", "Timestamp", "Color", "URL"
+                    "{:<15} {:<50} {:<20} {:<10} URL",
+                    "ID", "Message", "Timestamp", "Color"
                 );
                 println!("{:-<110}", "");
 

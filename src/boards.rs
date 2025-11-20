@@ -97,8 +97,8 @@ async fn list_boards(client: &HoneycombClient, format: &OutputFormat) -> Result<
         OutputFormat::Table => {
             if let Value::Array(boards) = response {
                 println!(
-                    "{:<15} {:<30} {:<10} {:<20} {}",
-                    "ID", "Name", "Queries", "Style", "Created"
+                    "{:<15} {:<30} {:<10} {:<20} Created",
+                    "ID", "Name", "Queries", "Style"
                 );
                 println!("{:-<85}", "");
 

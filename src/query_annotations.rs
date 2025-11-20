@@ -123,8 +123,8 @@ async fn list_query_annotations(
         OutputFormat::Table => {
             if let Value::Array(annotations) = response {
                 println!(
-                    "{:<15} {:<15} {:<30} {}",
-                    "ID", "Query ID", "Name", "Created"
+                    "{:<15} {:<15} {:<30} Created",
+                    "ID", "Query ID", "Name"
                 );
                 println!("{:-<75}", "");
 

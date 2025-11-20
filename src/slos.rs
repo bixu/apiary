@@ -145,8 +145,8 @@ async fn list_slos(client: &HoneycombClient, dataset: &str, format: &OutputForma
         OutputFormat::Table => {
             if let Value::Array(slos) = response {
                 println!(
-                    "{:<15} {:<30} {:<15} {:<15} {}",
-                    "ID", "Name", "Target %", "Time Period", "Created"
+                    "{:<15} {:<30} {:<15} {:<15} Created",
+                    "ID", "Name", "Target %", "Time Period"
                 );
                 println!("{:-<85}", "");
 

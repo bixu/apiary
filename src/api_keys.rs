@@ -131,8 +131,8 @@ async fn list_api_keys(client: &HoneycombClient, team: &str, format: &OutputForm
         OutputFormat::Table => {
             if let Value::Array(api_keys) = response {
                 println!(
-                    "{:<15} {:<30} {:<15} {:<10} {:<30} {}",
-                    "ID", "Name", "Type", "Disabled", "Environment", "Created"
+                    "{:<15} {:<30} {:<15} {:<10} {:<30} Created",
+                    "ID", "Name", "Type", "Disabled", "Environment"
                 );
                 println!("{:-<110}", "");
 

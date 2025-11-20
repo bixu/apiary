@@ -116,8 +116,8 @@ async fn list_datasets(
         OutputFormat::Table => {
             if let Value::Array(datasets) = response {
                 println!(
-                    "{:<30} {:<20} {:<20} {}",
-                    "Name", "Slug", "Created", "Last Written"
+                    "{:<30} {:<20} {:<20} Last Written",
+                    "Name", "Slug", "Created"
                 );
                 println!("{:-<80}", "");
 

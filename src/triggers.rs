@@ -155,8 +155,8 @@ async fn list_triggers(
         OutputFormat::Table => {
             if let Value::Array(triggers) = response {
                 println!(
-                    "{:<15} {:<30} {:<10} {:<15} {:<20} {}",
-                    "ID", "Name", "Disabled", "Alert Type", "Created", "Recipients"
+                    "{:<15} {:<30} {:<10} {:<15} {:<20} Recipients",
+                    "ID", "Name", "Disabled", "Alert Type", "Created"
                 );
                 println!("{:-<100}", "");
 

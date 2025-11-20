@@ -121,8 +121,8 @@ async fn list_columns(
         OutputFormat::Table => {
             if let Value::Array(columns) = response {
                 println!(
-                    "{:<15} {:<30} {:<10} {:<20} {}",
-                    "ID", "Key Name", "Hidden", "Type", "Created"
+                    "{:<15} {:<30} {:<10} {:<20} Created",
+                    "ID", "Key Name", "Hidden", "Type"
                 );
                 println!("{:-<85}", "");
 

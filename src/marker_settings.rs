@@ -105,7 +105,7 @@ async fn list_marker_settings(
         }
         OutputFormat::Table => {
             if let Value::Array(settings) = response {
-                println!("{:<15} {:<30} {:<15} {}", "ID", "Type", "Color", "Created");
+                println!("{:<15} {:<30} {:<15} Created", "ID", "Type", "Color");
                 println!("{:-<70}", "");
 
                 for setting in settings {
