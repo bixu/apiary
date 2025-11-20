@@ -1,0 +1,23 @@
+{
+  "name": "High Error Rate Alert",
+  "description": "Alert when error rate exceeds 5% over 5 minutes",
+  "query": {
+    "calculations": [
+      {"op": "COUNT", "alias": "total_requests"},
+      {"op": "COUNT_DISTINCT", "column": "trace_id", "alias": "error_count"}
+    ],
+    "filters": [
+      {"column": "status_code", "op": ">=", "value": 400}
+    ],
+    "time_range": 300,
+    "granularity": 60
+  },
+  "threshold": {
+    "op": ">",
+    "value": 0.05,
+    "frequency": 2
+  },
+  "alert_type": "on_change",
+  "recipients": ["recipient-uuid-here"],
+  "disabled": false
+}

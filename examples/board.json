@@ -1,0 +1,25 @@
+{
+  "name": "Application Performance Dashboard",
+  "description": "Main dashboard for monitoring application performance",
+  "style": "visual",
+  "queries": [
+    {
+      "query_id": "query-uuid-here",
+      "dataset": "my-application",
+      "query_style": "graph",
+      "graphic_settings": {
+        "type": "line",
+        "title": "Request Rate",
+        "y_axis": "requests_per_second"
+      }
+    },
+    {
+      "query_id": "another-query-uuid",
+      "dataset": "my-application", 
+      "query_style": "table",
+      "graphic_settings": {
+        "title": "Top Endpoints by Latency"
+      }
+    }
+  ]
+}
