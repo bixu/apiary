@@ -71,7 +71,9 @@ mod api_keys {
             Some(mock_server.uri()),
         );
 
-        let response = client.get("/2/teams/test-team/api_keys/key-123", None).await;
+        let response = client
+            .get("/2/teams/test-team/api_keys/key-123", None)
+            .await;
         assert!(response.is_ok());
     }
 }
@@ -79,8 +81,8 @@ mod api_keys {
 /// Test Environments endpoints
 mod environments {
     use super::*;
-    use apiary::environments::EnvironmentCommands;
     use apiary::common::OutputFormat;
+    use apiary::environments::EnvironmentCommands;
 
     #[tokio::test]
     async fn test_list_environments() {
@@ -104,11 +106,8 @@ mod environments {
             .mount(&mock_server)
             .await;
 
-        let client = HoneycombClient::new(
-            Some("test-key".to_string()),
-            None,
-            Some(mock_server.uri()),
-        );
+        let client =
+            HoneycombClient::new(Some("test-key".to_string()), None, Some(mock_server.uri()));
 
         let command = EnvironmentCommands::List {
             team: "test-team".to_string(),
@@ -172,7 +171,8 @@ mod datasets {
         );
 
         let response = client.get("/1/datasets/test-dataset", None).await;
-        assert!(response.is_ok());    }
+        assert!(response.is_ok());
+    }
 }
 
 /// Test Columns endpoints
@@ -218,8 +218,8 @@ mod columns {
 /// Test Triggers endpoints
 mod triggers {
     use super::*;
-    use apiary::triggers::TriggerCommands;
     use apiary::common::OutputFormat;
+    use apiary::triggers::TriggerCommands;
 
     #[tokio::test]
     async fn test_list_triggers() {
@@ -259,8 +259,8 @@ mod triggers {
 /// Test SLOs endpoints
 mod slos {
     use super::*;
-    use apiary::slos::SloCommands;
     use apiary::common::OutputFormat;
+    use apiary::slos::SloCommands;
 
     #[tokio::test]
     async fn test_list_slos() {
@@ -338,8 +338,8 @@ mod boards {
 /// Test Markers endpoints
 mod markers {
     use super::*;
-    use apiary::markers::MarkerCommands;
     use apiary::common::OutputFormat;
+    use apiary::markers::MarkerCommands;
 
     #[tokio::test]
     async fn test_list_markers() {
@@ -378,8 +378,8 @@ mod markers {
 /// Test Recipients endpoints
 mod recipients {
     use super::*;
-    use apiary::recipients::RecipientCommands;
     use apiary::common::OutputFormat;
+    use apiary::recipients::RecipientCommands;
 
     #[tokio::test]
     async fn test_list_recipients() {
@@ -497,8 +497,8 @@ mod calculated_fields {
 /// Test Dataset Definitions endpoints
 mod dataset_definitions {
     use super::*;
-    use apiary::dataset_definitions::DatasetDefinitionCommands;
     use apiary::common::OutputFormat;
+    use apiary::dataset_definitions::DatasetDefinitionCommands;
 
     #[tokio::test]
     async fn test_get_dataset_definitions() {
@@ -534,8 +534,8 @@ mod dataset_definitions {
 /// Test Marker Settings endpoints
 mod marker_settings {
     use super::*;
-    use apiary::marker_settings::MarkerSettingCommands;
     use apiary::common::OutputFormat;
+    use apiary::marker_settings::MarkerSettingCommands;
 
     #[tokio::test]
     async fn test_list_marker_settings() {
@@ -573,8 +573,8 @@ mod marker_settings {
 /// Test Query Annotations endpoints
 mod query_annotations {
     use super::*;
-    use apiary::query_annotations::QueryAnnotationCommands;
     use apiary::common::OutputFormat;
+    use apiary::query_annotations::QueryAnnotationCommands;
 
     #[tokio::test]
     async fn test_list_query_annotations() {
@@ -639,7 +639,9 @@ mod queries {
             "time_range": 3600
         });
 
-        let response = client.post("/1/query_results/test-dataset", &query_data).await;
+        let response = client
+            .post("/1/query_results/test-dataset", &query_data)
+            .await;
         assert!(response.is_ok());
     }
 }
@@ -661,7 +663,7 @@ mod auth {
                     "slug": "test-team"
                 },
                 "environment": {
-                    "name": "Production", 
+                    "name": "Production",
                     "slug": "production"
                 }
             })))

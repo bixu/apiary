@@ -41,7 +41,9 @@ async fn test_create_query_result() {
         "time_range": 3600
     });
 
-    let response = client.post("/1/query_results/test-dataset", &query_spec).await;
+    let response = client
+        .post("/1/query_results/test-dataset", &query_spec)
+        .await;
     assert!(response.is_ok());
 }
 
@@ -69,7 +71,9 @@ async fn test_get_query_result_in_progress() {
         Some(mock_server.uri()),
     );
 
-    let response = client.get("/1/query_results/test-dataset/result-123", None).await;
+    let response = client
+        .get("/1/query_results/test-dataset/result-123", None)
+        .await;
     assert!(response.is_ok());
 }
 
@@ -120,11 +124,13 @@ async fn test_get_query_result_complete_with_data() {
         Some(mock_server.uri()),
     );
 
-    let response = client.get("/1/query_results/test-dataset/result-123", None).await;
+    let response = client
+        .get("/1/query_results/test-dataset/result-123", None)
+        .await;
     assert!(response.is_ok());
 }
 
-#[tokio::test] 
+#[tokio::test]
 async fn test_query_timeout() {
     let mock_server = MockServer::start().await;
 
@@ -156,7 +162,9 @@ async fn test_query_timeout() {
         "time_range": 86400  // 24 hours
     });
 
-    let response = client.post("/1/query_results/test-dataset", &complex_query).await;
+    let response = client
+        .post("/1/query_results/test-dataset", &complex_query)
+        .await;
     assert!(response.is_err());
 }
 
@@ -186,6 +194,8 @@ async fn test_query_with_invalid_syntax() {
         "time_range": 3600
     });
 
-    let response = client.post("/1/query_results/test-dataset", &invalid_query).await;
+    let response = client
+        .post("/1/query_results/test-dataset", &invalid_query)
+        .await;
     assert!(response.is_err());
 }

@@ -4,7 +4,7 @@
 use apiary::client::HoneycombClient;
 use serde_json::json;
 use wiremock::{
-    matchers::{method, path, header},
+    matchers::{header, method, path},
     Mock, MockServer, ResponseTemplate,
 };
 
@@ -62,7 +62,7 @@ async fn test_send_batch_events() {
             "duration_ms": 150
         },
         {
-            "timestamp": "2023-01-01T00:00:01Z", 
+            "timestamp": "2023-01-01T00:00:01Z",
             "service_name": "api",
             "duration_ms": 200
         }

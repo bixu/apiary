@@ -28,7 +28,7 @@ mod service_maps {
                         "p95_duration": 120
                     },
                     {
-                        "name": "user-service", 
+                        "name": "user-service",
                         "request_rate": 800,
                         "error_rate": 0.01,
                         "avg_duration": 25,
@@ -90,7 +90,9 @@ mod service_maps {
         params.insert("start_time".to_string(), "2023-01-01T00:00:00Z".to_string());
         params.insert("end_time".to_string(), "2023-01-01T01:00:00Z".to_string());
 
-        let response = client.get("/1/service_map/test-dataset", Some(&params)).await;
+        let response = client
+            .get("/1/service_map/test-dataset", Some(&params))
+            .await;
         assert!(response.is_ok());
     }
 
@@ -126,7 +128,9 @@ mod service_maps {
         let mut params = std::collections::HashMap::new();
         params.insert("service".to_string(), "api-gateway".to_string());
 
-        let response = client.get("/1/service_map/test-dataset", Some(&params)).await;
+        let response = client
+            .get("/1/service_map/test-dataset", Some(&params))
+            .await;
         assert!(response.is_ok());
     }
 }
@@ -153,7 +157,7 @@ mod reporting {
                         "billable_events": 780000
                     },
                     {
-                        "name": "staging", 
+                        "name": "staging",
                         "events": 450000,
                         "billable_events": 420000
                     }
@@ -243,7 +247,7 @@ mod reporting {
                         "error_budget_consumed": 4.8
                     },
                     {
-                        "id": "slo-456", 
+                        "id": "slo-456",
                         "name": "Service Availability",
                         "target_percentage": 99.5,
                         "actual_percentage": 99.2,
@@ -268,7 +272,9 @@ mod reporting {
         params.insert("dataset".to_string(), "test-dataset".to_string());
         params.insert("time_range".to_string(), "7d".to_string());
 
-        let response = client.get("/1/reports/slo_performance", Some(&params)).await;
+        let response = client
+            .get("/1/reports/slo_performance", Some(&params))
+            .await;
         assert!(response.is_ok());
     }
 
@@ -371,7 +377,9 @@ mod aggregation_tests {
             "analysis_type": "correlation"
         });
 
-        let response = client.post("/1/analysis/cross_dataset", &analysis_request).await;
+        let response = client
+            .post("/1/analysis/cross_dataset", &analysis_request)
+            .await;
         assert!(response.is_ok());
     }
 
@@ -385,7 +393,7 @@ mod aggregation_tests {
             .and(query_param("baseline_period", "7d"))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
                 "dataset": "test-dataset",
-                "metric": "response_time", 
+                "metric": "response_time",
                 "baseline_period": "7d",
                 "current_period": "1h",
                 "baseline_stats": {

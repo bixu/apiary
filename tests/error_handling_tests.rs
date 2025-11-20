@@ -84,11 +84,8 @@ mod rate_limiting {
             .mount(&mock_server)
             .await;
 
-        let client = HoneycombClient::new(
-            None,
-            Some("test-key".to_string()),
-            Some(mock_server.uri()),
-        );
+        let client =
+            HoneycombClient::new(None, Some("test-key".to_string()), Some(mock_server.uri()));
 
         let response = client.get("/1/datasets", None).await;
         assert!(response.is_err());
@@ -111,11 +108,8 @@ mod not_found {
             .mount(&mock_server)
             .await;
 
-        let client = HoneycombClient::new(
-            None,
-            Some("test-key".to_string()),
-            Some(mock_server.uri()),
-        );
+        let client =
+            HoneycombClient::new(None, Some("test-key".to_string()), Some(mock_server.uri()));
 
         let response = client.get("/1/datasets/nonexistent", None).await;
         assert!(response.is_err());
@@ -133,13 +127,12 @@ mod not_found {
             .mount(&mock_server)
             .await;
 
-        let client = HoneycombClient::new(
-            None,
-            Some("test-key".to_string()),
-            Some(mock_server.uri()),
-        );
+        let client =
+            HoneycombClient::new(None, Some("test-key".to_string()), Some(mock_server.uri()));
 
-        let response = client.get("/1/triggers/test-dataset/nonexistent-trigger", None).await;
+        let response = client
+            .get("/1/triggers/test-dataset/nonexistent-trigger", None)
+            .await;
         assert!(response.is_err());
     }
 
@@ -155,13 +148,12 @@ mod not_found {
             .mount(&mock_server)
             .await;
 
-        let client = HoneycombClient::new(
-            Some("test-key".to_string()),
-            None,
-            Some(mock_server.uri()),
-        );
+        let client =
+            HoneycombClient::new(Some("test-key".to_string()), None, Some(mock_server.uri()));
 
-        let response = client.get("/2/teams/test-team/api_keys/nonexistent-key", None).await;
+        let response = client
+            .get("/2/teams/test-team/api_keys/nonexistent-key", None)
+            .await;
         assert!(response.is_err());
     }
 }
@@ -182,11 +174,8 @@ mod validation_errors {
             .mount(&mock_server)
             .await;
 
-        let client = HoneycombClient::new(
-            None,
-            Some("test-key".to_string()),
-            Some(mock_server.uri()),
-        );
+        let client =
+            HoneycombClient::new(None, Some("test-key".to_string()), Some(mock_server.uri()));
 
         let invalid_data = json!({
             "name": "", // Empty name should be invalid
@@ -210,18 +199,17 @@ mod validation_errors {
             .mount(&mock_server)
             .await;
 
-        let client = HoneycombClient::new(
-            None,
-            Some("test-key".to_string()),
-            Some(mock_server.uri()),
-        );
+        let client =
+            HoneycombClient::new(None, Some("test-key".to_string()), Some(mock_server.uri()));
 
         let incomplete_marker = json!({
             "color": "blue"
             // Missing required fields: message, start_time
         });
 
-        let response = client.post("/1/markers/test-dataset", &incomplete_marker).await;
+        let response = client
+            .post("/1/markers/test-dataset", &incomplete_marker)
+            .await;
         assert!(response.is_err());
     }
 }
@@ -242,11 +230,8 @@ mod server_errors {
             .mount(&mock_server)
             .await;
 
-        let client = HoneycombClient::new(
-            None,
-            Some("test-key".to_string()),
-            Some(mock_server.uri()),
-        );
+        let client =
+            HoneycombClient::new(None, Some("test-key".to_string()), Some(mock_server.uri()));
 
         let response = client.get("/1/datasets", None).await;
         assert!(response.is_err());
@@ -264,11 +249,8 @@ mod server_errors {
             .mount(&mock_server)
             .await;
 
-        let client = HoneycombClient::new(
-            None,
-            Some("test-key".to_string()),
-            Some(mock_server.uri()),
-        );
+        let client =
+            HoneycombClient::new(None, Some("test-key".to_string()), Some(mock_server.uri()));
 
         let response = client.get("/1/datasets", None).await;
         assert!(response.is_err());
@@ -321,20 +303,20 @@ mod query_parameters {
             .mount(&mock_server)
             .await;
 
-        let client = HoneycombClient::new(
-            None,
-            Some("test-key".to_string()),
-            Some(mock_server.uri()),
-        );
+        let client =
+            HoneycombClient::new(None, Some("test-key".to_string()), Some(mock_server.uri()));
 
         let mut params = HashMap::new();
-        params.insert("key_name".to_string(), "field with spaces & symbols".to_string());
+        params.insert(
+            "key_name".to_string(),
+            "field with spaces & symbols".to_string(),
+        );
 
         let response = client.get("/1/columns/test-dataset", Some(&params)).await;
         assert!(response.is_ok());
     }
 
-    #[tokio::test] 
+    #[tokio::test]
     async fn test_unicode_in_params() {
         let mock_server = MockServer::start().await;
 
@@ -345,14 +327,14 @@ mod query_parameters {
             .mount(&mock_server)
             .await;
 
-        let client = HoneycombClient::new(
-            None,
-            Some("test-key".to_string()),
-            Some(mock_server.uri()),
-        );
+        let client =
+            HoneycombClient::new(None, Some("test-key".to_string()), Some(mock_server.uri()));
 
         let mut params = HashMap::new();
-        params.insert("message".to_string(), "🚀 Deployment émoji test 中文".to_string());
+        params.insert(
+            "message".to_string(),
+            "🚀 Deployment émoji test 中文".to_string(),
+        );
 
         let response = client.get("/1/markers/test-dataset", Some(&params)).await;
         assert!(response.is_ok());
