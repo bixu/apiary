@@ -208,6 +208,7 @@ mod columns {
         let command = ColumnCommands::List {
             dataset: "test-dataset".to_string(),
             format: OutputFormat::Json,
+            environment: None,
         };
 
         let result = command.execute(&client).await;
@@ -249,6 +250,7 @@ mod triggers {
         let command = TriggerCommands::List {
             dataset: "test-dataset".to_string(),
             format: OutputFormat::Json,
+            environment: None,
         };
 
         let result = command.execute(&client).await;
@@ -289,6 +291,7 @@ mod slos {
         let command = SloCommands::List {
             dataset: "test-dataset".to_string(),
             format: OutputFormat::Json,
+            environment: None,
         };
 
         let result = command.execute(&client).await;
@@ -312,7 +315,6 @@ mod boards {
                 {
                     "id": "board-123",
                     "name": "Service Dashboard",
-                    "queries": 5,
                     "style": "visual",
                     "created_at": "2023-01-01T00:00:00Z"
                 }
@@ -368,6 +370,7 @@ mod markers {
         let command = MarkerCommands::List {
             dataset: "test-dataset".to_string(),
             format: OutputFormat::Json,
+            environment: None,
         };
 
         let result = command.execute(&client).await;
@@ -448,6 +451,7 @@ mod burn_alerts {
         let command = BurnAlertCommands::List {
             dataset: "test-dataset".to_string(),
             format: OutputFormat::Json,
+            environment: None,
         };
 
         let result = command.execute(&client).await;
@@ -487,6 +491,7 @@ mod calculated_fields {
         let command = CalculatedFieldCommands::List {
             dataset: "test-dataset".to_string(),
             format: OutputFormat::Json,
+            environment: None,
         };
 
         let result = command.execute(&client).await;
@@ -563,6 +568,7 @@ mod marker_settings {
         let command = MarkerSettingCommands::List {
             dataset: "test-dataset".to_string(),
             format: OutputFormat::Json,
+            environment: None,
         };
 
         let result = command.execute(&client).await;
@@ -570,81 +576,7 @@ mod marker_settings {
     }
 }
 
-/// Test Query Annotations endpoints
-mod query_annotations {
-    use super::*;
-    use apiary::common::OutputFormat;
-    use apiary::query_annotations::QueryAnnotationCommands;
 
-    #[tokio::test]
-    async fn test_list_query_annotations() {
-        let mock_server = MockServer::start().await;
-
-        Mock::given(method("GET"))
-            .and(path("/1/query_annotations/test-dataset"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!([
-                {
-                    "id": "annotation-123",
-                    "query_id": "query-456",
-                    "name": "High Traffic Period",
-                    "created_at": "2023-01-01T00:00:00Z"
-                }
-            ])))
-            .mount(&mock_server)
-            .await;
-
-        let client = HoneycombClient::new(
-            None,
-            Some("test-config-key".to_string()),
-            Some(mock_server.uri()),
-        );
-
-        let command = QueryAnnotationCommands::List {
-            dataset: "test-dataset".to_string(),
-            format: OutputFormat::Json,
-        };
-
-        let result = command.execute(&client).await;
-        assert!(result.is_ok());
-    }
-}
-
-/// Test Queries endpoints
-mod queries {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_run_query() {
-        let mock_server = MockServer::start().await;
-
-        // Mock the query execution endpoint
-        Mock::given(method("POST"))
-            .and(path("/1/query_results/test-dataset"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "query_result_id": "result-123",
-                "query_url": "https://ui.honeycomb.io/query",
-                "complete": true
-            })))
-            .mount(&mock_server)
-            .await;
-
-        let client = HoneycombClient::new(
-            None,
-            Some("test-config-key".to_string()),
-            Some(mock_server.uri()),
-        );
-
-        let query_data = json!({
-            "calculations": [{"op": "COUNT"}],
-            "time_range": 3600
-        });
-
-        let response = client
-            .post("/1/query_results/test-dataset", &query_data)
-            .await;
-        assert!(response.is_ok());
-    }
-}
 
 /// Test Auth endpoints
 mod auth {

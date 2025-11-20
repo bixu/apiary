@@ -11,8 +11,7 @@ mod datasets;
 mod environments;
 mod marker_settings;
 mod markers;
-mod queries;
-mod query_annotations;
+
 mod recipients;
 mod slos;
 mod triggers;
@@ -107,11 +106,7 @@ enum Commands {
         #[command(subcommand)]
         command: triggers::TriggerCommands,
     },
-    /// Query operations
-    Queries {
-        #[command(subcommand)]
-        command: queries::QueryCommands,
-    },
+
     /// Board management
     Boards {
         #[command(subcommand)]
@@ -162,84 +157,15 @@ enum Commands {
         #[command(subcommand)]
         command: marker_settings::MarkerSettingCommands,
     },
-    /// Query Annotations management
-    QueryAnnotations {
-        #[command(subcommand)]
-        command: query_annotations::QueryAnnotationCommands,
-    },
-    /// Send events to Honeycomb
-    Events {
-        /// Dataset slug
-        #[arg(short, long)]
-        dataset: String,
-        /// Event data (JSON file path or inline JSON)
-        #[arg(long)]
-        data: String,
-        /// Use batch endpoint
-        #[arg(long)]
-        batch: bool,
-    },
-    /// Create and manage query results
-    QueryResults {
-        /// Dataset slug
-        #[arg(short, long)]
-        dataset: String,
-        #[command(subcommand)]
-        command: QueryResultCommands,
-    },
-    /// Service Maps operations
-    ServiceMaps {
-        #[command(subcommand)]
-        command: ServiceMapCommands,
-    },
-    /// Reporting operations
-    Reporting {
-        #[command(subcommand)]
-        command: ReportingCommands,
-    },
+
+
+
+
+
 }
 
-#[derive(Subcommand)]
-enum QueryResultCommands {
-    /// Create a query result
-    Create {
-        /// Query ID
-        #[arg(short, long)]
-        query_id: String,
-    },
-    /// Get query result status and data
-    Get {
-        /// Query Result ID
-        #[arg(short, long)]
-        id: String,
-    },
-}
 
-#[derive(Subcommand)]
-enum ServiceMapCommands {
-    /// Create dependency request
-    CreateDependencyRequest {
-        /// Request data (JSON file path or inline JSON)
-        #[arg(long)]
-        data: String,
-    },
-    /// Get dependency request
-    GetDependencyRequest {
-        /// Request ID
-        #[arg(short, long)]
-        id: String,
-    },
-}
 
-#[derive(Subcommand)]
-enum ReportingCommands {
-    /// Get SLO historical data
-    SloHistory {
-        /// SLO historical data request (JSON file path or inline JSON)
-        #[arg(long)]
-        data: String,
-    },
-}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -327,15 +253,8 @@ fn display_resource_usage() {
     println!("  dataset-definitions - Dataset schema definitions");
     println!();
 
-    println!("Queries & Analysis:");
-    println!("  queries           - Query creation, execution, and management");
-    println!("  query-results     - Query result retrieval and status");
-    println!("  query-annotations - Query annotation management");
+    println!("Dashboard & Visualization:");
     println!("  boards            - Dashboard and board management");
-    println!();
-
-    println!("Events & Data Ingestion:");
-    println!("  events            - Send events to Honeycomb datasets");
     println!();
 
     println!("Alerting & Monitoring:");
@@ -350,11 +269,6 @@ fn display_resource_usage() {
     println!("  marker-settings   - Marker display configuration");
     println!();
 
-    println!("Service Management:");
-    println!("  service-maps      - Service dependency mapping");
-    println!("  reporting         - Historical SLO and metrics reporting");
-    println!();
-
     println!("USAGE:");
     println!("  apiary <RESOURCE> --help           Show help for a specific resource");
     println!("  apiary <RESOURCE> <COMMAND> --help Show help for a specific command");
@@ -362,8 +276,7 @@ fn display_resource_usage() {
 
     println!("EXAMPLES:");
     println!("  apiary datasets list               List all datasets");
-    println!("  apiary queries create --help       Show query creation options");
-    println!("  apiary events --dataset my-dataset --data event.json");
+    println!("  apiary boards list --help          Show board listing options");
     println!("  apiary triggers list --dataset my-dataset");
     println!();
 
@@ -389,7 +302,6 @@ async fn execute_command(client: &HoneycombClient, command: Commands, team: &Opt
         Commands::Datasets { command } => command.execute(&client, team).await,
         Commands::Columns { command } => command.execute(client).await,
         Commands::Triggers { command } => command.execute(client).await,
-        Commands::Queries { command } => command.execute(client).await,
         Commands::Boards { command } => command.execute(client).await,
         Commands::Markers { command } => command.execute(client).await,
         Commands::Recipients { command } => command.execute(client).await,
@@ -400,108 +312,5 @@ async fn execute_command(client: &HoneycombClient, command: Commands, team: &Opt
         Commands::CalculatedFields { command } => command.execute(client).await,
         Commands::DatasetDefinitions { command } => command.execute(client).await,
         Commands::MarkerSettings { command } => command.execute(client).await,
-        Commands::QueryAnnotations { command } => command.execute(client).await,
-        Commands::Events {
-            dataset,
-            data,
-            batch,
-        } => send_events(client, &dataset, &data, batch).await,
-        Commands::QueryResults { dataset, command } => {
-            execute_query_result_command(client, &dataset, command).await
-        }
-        Commands::ServiceMaps { command } => execute_service_map_command(client, command).await,
-        Commands::Reporting { command } => execute_reporting_command(client, command).await,
     }
-}
-
-async fn send_events(
-    client: &HoneycombClient,
-    dataset: &str,
-    data: &str,
-    batch: bool,
-) -> Result<()> {
-    let json_data = if std::path::Path::new(data).exists() {
-        common::read_json_file(data)?
-    } else {
-        serde_json::from_str(data)?
-    };
-
-    let path = if batch {
-        format!("/1/batch/{}", dataset)
-    } else {
-        format!("/1/events/{}", dataset)
-    };
-
-    let response = client.post(&path, &json_data).await?;
-    println!("{}", common::pretty_print_json(&response)?);
-
-    Ok(())
-}
-
-async fn execute_query_result_command(
-    client: &HoneycombClient,
-    dataset: &str,
-    command: QueryResultCommands,
-) -> Result<()> {
-    match command {
-        QueryResultCommands::Create { query_id } => {
-            let data = serde_json::json!({ "query_id": query_id });
-            let path = format!("/1/query_results/{}", dataset);
-            let response = client.post(&path, &data).await?;
-            println!("{}", common::pretty_print_json(&response)?);
-        }
-        QueryResultCommands::Get { id } => {
-            let path = format!("/1/query_results/{}/{}", dataset, id);
-            let response = client.get(&path, None).await?;
-            println!("{}", common::pretty_print_json(&response)?);
-        }
-    }
-    Ok(())
-}
-
-async fn execute_service_map_command(
-    client: &HoneycombClient,
-    command: ServiceMapCommands,
-) -> Result<()> {
-    match command {
-        ServiceMapCommands::CreateDependencyRequest { data } => {
-            let json_data = if std::path::Path::new(&data).exists() {
-                common::read_json_file(&data)?
-            } else {
-                serde_json::from_str(&data)?
-            };
-
-            let response = client
-                .post("/1/maps/dependencies/requests", &json_data)
-                .await?;
-            println!("{}", common::pretty_print_json(&response)?);
-        }
-        ServiceMapCommands::GetDependencyRequest { id } => {
-            let path = format!("/1/maps/dependencies/requests/{}", id);
-            let response = client.get(&path, None).await?;
-            println!("{}", common::pretty_print_json(&response)?);
-        }
-    }
-    Ok(())
-}
-
-async fn execute_reporting_command(
-    client: &HoneycombClient,
-    command: ReportingCommands,
-) -> Result<()> {
-    match command {
-        ReportingCommands::SloHistory { data } => {
-            let json_data = if std::path::Path::new(&data).exists() {
-                common::read_json_file(&data)?
-            } else {
-                serde_json::from_str(&data)?
-            };
-
-            let response = client
-                .post("/1/reporting/slos/historical", &json_data)
-                .await?;
-            println!("{}", common::pretty_print_json(&response)?);
-        }
-    }
-    Ok(())
 }

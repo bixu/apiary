@@ -11,8 +11,6 @@ pub mod datasets;
 pub mod environments;
 pub mod marker_settings;
 pub mod markers;
-pub mod queries;
-pub mod query_annotations;
 pub mod recipients;
 pub mod slos;
 pub mod triggers;
