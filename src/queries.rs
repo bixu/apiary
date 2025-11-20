@@ -2,8 +2,6 @@ use crate::client::HoneycombClient;
 use crate::common::{pretty_print_json, read_json_file, OutputFormat};
 use anyhow::Result;
 use clap::Subcommand;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 #[derive(Subcommand)]
 pub enum QueryCommands {
@@ -49,77 +47,6 @@ pub enum QueryCommands {
         #[arg(long, default_value = "30")]
         timeout: u64,
     },
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct Query {
-    pub id: String,
-    pub query_url: String,
-    pub query_style: String,
-    pub calculations: Vec<Calculation>,
-    pub filters: Vec<Filter>,
-    pub breakdowns: Vec<String>,
-    pub orders: Vec<Order>,
-    pub limit: Option<i32>,
-    pub time_range: Option<i64>,
-    pub start_time: Option<chrono::DateTime<chrono::Utc>>,
-    pub end_time: Option<chrono::DateTime<chrono::Utc>>,
-    pub granularity: Option<i64>,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct QueryResult {
-    pub query_result_id: String,
-    pub query_url: String,
-    pub complete: bool,
-    pub links: Option<QueryResultLinks>,
-    pub data: Option<QueryData>,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct QueryResultLinks {
-    pub query_result: String,
-    pub graph_image: Option<String>,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct QueryData {
-    pub series: Vec<QuerySeries>,
-    pub is_time_series: bool,
-    pub query: Query,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct QuerySeries {
-    pub time: Option<chrono::DateTime<chrono::Utc>>,
-    pub data: Vec<QueryDataPoint>,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct QueryDataPoint {
-    #[serde(flatten)]
-    pub values: std::collections::HashMap<String, Value>,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct Calculation {
-    pub op: String,
-    pub column: Option<String>,
-    pub alias: String,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct Filter {
-    pub column: String,
-    pub op: String,
-    pub value: Value,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct Order {
-    pub op: Option<String>,
-    pub column: Option<String>,
-    pub order: String,
 }
 
 impl QueryCommands {

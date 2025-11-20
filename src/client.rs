@@ -1,16 +1,14 @@
 use anyhow::{Context, Result};
 use reqwest::{Client, Method, Response};
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct HoneycombClient {
     client: Client,
     management_key: Option<String>,
     config_key: Option<String>,
     base_url: String,
-    team_slug: Option<String>,
 }
 
 impl HoneycombClient {
@@ -18,14 +16,12 @@ impl HoneycombClient {
         management_key: Option<String>,
         config_key: Option<String>,
         base_url: Option<String>,
-        team_slug: Option<String>,
     ) -> Self {
         Self {
             client: Client::new(),
             management_key,
             config_key,
             base_url: base_url.unwrap_or_else(|| "https://api.honeycomb.io".to_string()),
-            team_slug,
         }
     }
 
@@ -145,10 +141,6 @@ impl HoneycombClient {
         }
     }
 
-    pub fn team_slug(&self) -> Option<&str> {
-        self.team_slug.as_deref()
-    }
-
     /// Check if an endpoint is a v2 endpoint (uses Management Key)
     pub fn is_v2_endpoint(&self, path: &str) -> bool {
         path.starts_with("/2/")
@@ -163,25 +155,4 @@ impl HoneycombClient {
     pub fn has_config_key(&self) -> bool {
         self.config_key.is_some()
     }
-
-    /// Get key type for an endpoint (for error messages)
-    pub fn get_key_type_for_endpoint(&self, path: &str) -> &'static str {
-        if self.is_v2_endpoint(path) {
-            "Management Key (v2)"
-        } else {
-            "Configuration Key (v1)"
-        }
-    }
-}
-
-// Common API response structures
-#[derive(Deserialize, Serialize, Debug)]
-pub struct ApiError {
-    pub error: String,
-    pub message: Option<String>,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct ListResponse<T> {
-    pub data: Vec<T>,
 }

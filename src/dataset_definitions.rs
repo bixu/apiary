@@ -2,7 +2,6 @@ use crate::client::HoneycombClient;
 use crate::common::{pretty_print_json, read_json_file, OutputFormat};
 use anyhow::Result;
 use clap::Subcommand;
-use serde::{Deserialize, Serialize};
 
 #[derive(Subcommand)]
 pub enum DatasetDefinitionCommands {
@@ -27,22 +26,6 @@ pub enum DatasetDefinitionCommands {
         #[arg(short, long, default_value = "pretty")]
         format: OutputFormat,
     },
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct DatasetDefinition {
-    pub trace_id_field: Option<String>,
-    pub parent_id_field: Option<String>,
-    pub name_field: Option<String>,
-    pub service_name_field: Option<String>,
-    pub span_kind_field: Option<String>,
-    pub status_code_field: Option<String>,
-    pub duration_field: Option<String>,
-    pub user_id_field: Option<String>,
-    pub error_field: Option<String>,
-    pub http_status_code_field: Option<String>,
-    pub url_field: Option<String>,
-    pub route_field: Option<String>,
 }
 
 impl DatasetDefinitionCommands {

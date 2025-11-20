@@ -36,7 +36,6 @@ async fn test_validate_environment_with_valid_slug() {
         Some("test-mgmt-key".to_string()),
         Some("test-config-key".to_string()),
         Some(mock_server.uri()),
-        None,
     );
 
     let result = validate_environment(&client, "test-team", "production")
@@ -74,7 +73,6 @@ async fn test_validate_environment_with_valid_name() {
         Some("test-mgmt-key".to_string()),
         Some("test-config-key".to_string()),
         Some(mock_server.uri()),
-        None,
     );
 
     let result = validate_environment(&client, "test-team", "Production")
@@ -112,7 +110,6 @@ async fn test_validate_environment_with_invalid_environment() {
         Some("test-mgmt-key".to_string()),
         Some("test-config-key".to_string()),
         Some(mock_server.uri()),
-        None,
     );
 
     let result = validate_environment(&client, "test-team", "nonexistent")
@@ -133,8 +130,8 @@ async fn test_require_valid_environment_success() {
                     "id": "env-123",
                     "type": "environment",
                     "attributes": {
-                        "name": "Test",
-                        "slug": "test",
+                        "name": "Production",
+                        "slug": "production",
                         "timestamps": {
                             "created": "2023-01-01T00:00:00Z",
                             "updated": "2023-01-01T00:00:00Z"
@@ -150,13 +147,11 @@ async fn test_require_valid_environment_success() {
         Some("test-mgmt-key".to_string()),
         Some("test-config-key".to_string()),
         Some(mock_server.uri()),
-        None,
     );
 
-    let result = require_valid_environment(&client, "test-team", "test").await;
+    let result = require_valid_environment(&client, "test-team", "production").await;
     assert!(result.is_ok(), "Should succeed for valid environment");
 }
-
 #[tokio::test]
 async fn test_require_valid_environment_failure() {
     let mock_server = MockServer::start().await;
@@ -173,7 +168,6 @@ async fn test_require_valid_environment_failure() {
         Some("test-mgmt-key".to_string()),
         Some("test-config-key".to_string()),
         Some(mock_server.uri()),
-        None,
     );
 
     let result = require_valid_environment(&client, "test-team", "invalid-env").await;

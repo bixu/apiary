@@ -1,7 +1,6 @@
 use crate::client::HoneycombClient;
 use anyhow::Result;
 use serde_json::Value;
-use std::collections::HashMap;
 
 // Common utility functions
 pub fn read_json_file(path: &str) -> anyhow::Result<serde_json::Value> {
@@ -84,39 +83,3 @@ impl std::str::FromStr for OutputFormat {
         }
     }
 }
-
-// Common query parameters for pagination
-#[derive(Debug, Clone, Default)]
-pub struct PaginationParams {
-    pub limit: Option<u32>,
-    pub offset: Option<u32>,
-    pub order: Option<String>,
-}
-
-impl PaginationParams {
-    pub fn to_query_params(&self) -> HashMap<String, String> {
-        let mut params = HashMap::new();
-
-        if let Some(limit) = self.limit {
-            params.insert("limit".to_string(), limit.to_string());
-        }
-
-        if let Some(offset) = self.offset {
-            params.insert("offset".to_string(), offset.to_string());
-        }
-
-        if let Some(order) = &self.order {
-            params.insert("order".to_string(), order.clone());
-        }
-
-        params
-    }
-}
-
-// Common timestamp handling
-pub type Timestamp = chrono::DateTime<chrono::Utc>;
-
-// Common ID types used throughout the API
-pub type DatasetSlug = String;
-pub type TeamSlug = String;
-pub type EnvironmentId = String;

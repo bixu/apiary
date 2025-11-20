@@ -271,7 +271,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    let client = HoneycombClient::new(management_key, config_key, cli.api_url, cli.team);
+    let client = HoneycombClient::new(management_key, config_key, cli.api_url);
 
     match cli.command {
         Commands::Auth { command } => command.execute(&client).await,
