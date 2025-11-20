@@ -9,6 +9,9 @@ use serde_json::Value;
 pub enum BoardCommands {
     /// List all boards
     List {
+        /// Environment slug (optional, uses HONEYCOMB_ENVIRONMENT env var if not specified)
+        #[arg(short, long, env = "HONEYCOMB_ENVIRONMENT")]
+        environment: Option<String>,
         /// Output format
         #[arg(short, long, default_value = "table")]
         format: OutputFormat,
@@ -73,7 +76,10 @@ pub struct BoardQuery {
 impl BoardCommands {
     pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
         match self {
-            BoardCommands::List { format } => list_boards(client, format).await,
+            BoardCommands::List {
+                environment,
+                format,
+            } => list_boards(client, environment, format).await,
             BoardCommands::Get { id, format } => get_board(client, id, format).await,
             BoardCommands::Create { data, format } => create_board(client, data, format).await,
             BoardCommands::Update { id, data, format } => {
@@ -84,8 +90,38 @@ impl BoardCommands {
     }
 }
 
-async fn list_boards(client: &HoneycombClient, format: &OutputFormat) -> Result<()> {
-    let response = client.get("/1/boards", None).await?;
+async fn list_boards(
+    client: &HoneycombClient,
+    environment: &Option<String>,
+    format: &OutputFormat,
+) -> Result<()> {
+    use crate::common::require_valid_environment;
+    use std::collections::HashMap;
+
+    // If environment is provided, validate it exists
+    if let Some(env) = environment {
+        let team = std::env::var("HONEYCOMB_TEAM").unwrap_or_else(|_| "default".to_string());
+        require_valid_environment(client, &team, env).await?;
+    }
+
+    let path = "/1/boards";
+
+    // Add environment as query parameter if provided
+    let mut query_params = HashMap::new();
+    if let Some(env) = environment {
+        query_params.insert("environment".to_string(), env.to_string());
+    }
+
+    let response = client
+        .get(
+            path,
+            if query_params.is_empty() {
+                None
+            } else {
+                Some(&query_params)
+            },
+        )
+        .await?;
 
     match format {
         OutputFormat::Json => {

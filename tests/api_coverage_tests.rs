@@ -329,6 +329,7 @@ mod boards {
         );
 
         let command = BoardCommands::List {
+            environment: None,
             format: OutputFormat::Json,
         };
 
