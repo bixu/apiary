@@ -276,10 +276,10 @@ mod connectivity {
             tokio::time::timeout(timeout_duration, client.get("/1/datasets", None)).await;
 
         // The request should either timeout or fail with a connection error
-        match response {
-            Ok(result) => assert!(result.is_err()),
-            Err(_) => {} // Timeout occurred, which is expected
+        if let Ok(result) = response {
+            assert!(result.is_err());
         }
+        // If Err(_), timeout occurred, which is expected
     }
 
     #[tokio::test]
