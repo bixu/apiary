@@ -5,7 +5,7 @@ use predicates::prelude::*;
 #[tokio::test]
 async fn test_datasets_list_requires_team_and_environment() {
     let mut cmd = Command::new("cargo");
-    cmd.args(["run", "--", "apiary"]);
+    cmd.args(["run", "--"]);
 
     // Test missing both arguments
     cmd.arg("datasets")
@@ -22,7 +22,7 @@ async fn test_datasets_list_requires_team_and_environment() {
 #[tokio::test]
 async fn test_datasets_list_requires_environment() {
     let mut cmd = Command::new("cargo");
-    cmd.args(["run", "--", "apiary"]);
+    cmd.args(["run", "--"]);
 
     // Test missing environment argument
     cmd.arg("datasets")
@@ -40,7 +40,7 @@ async fn test_datasets_list_requires_environment() {
 #[tokio::test]
 async fn test_datasets_list_requires_team() {
     let mut cmd = Command::new("cargo");
-    cmd.args(["run", "--", "apiary"]);
+    cmd.args(["run", "--"]);
 
     // Test missing team argument
     cmd.arg("datasets")
@@ -59,7 +59,7 @@ async fn test_datasets_list_requires_team() {
 #[tokio::test]
 async fn test_datasets_list_help_shows_required_params() {
     let mut cmd = Command::new("cargo");
-    cmd.args(["run", "--", "apiary"]);
+    cmd.args(["run", "--"]);
 
     cmd.arg("datasets")
         .arg("list")
@@ -78,7 +78,7 @@ async fn test_datasets_list_help_shows_required_params() {
 #[tokio::test]
 async fn test_datasets_list_short_flags() {
     let mut cmd = Command::new("cargo");
-    cmd.args(["run", "--", "apiary"]);
+    cmd.args(["run", "--"]);
 
     // Test that short flags are properly recognized in help
     cmd.arg("datasets")
