@@ -9,18 +9,18 @@ use serde_json::Value;
 pub enum ApiKeyCommands {
     /// List all API keys in a team
     List {
-        /// Team slug
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long)]
-        team: String,
+        team: Option<String>,
         /// Output format
         #[arg(short, long, default_value = "table")]
         format: OutputFormat,
     },
     /// Get a specific API key
     Get {
-        /// Team slug
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long)]
-        team: String,
+        team: Option<String>,
         /// API Key ID
         #[arg(short, long)]
         id: String,
@@ -30,9 +30,9 @@ pub enum ApiKeyCommands {
     },
     /// Create a new API key
     Create {
-        /// Team slug
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long)]
-        team: String,
+        team: Option<String>,
         /// API key data (JSON file path or inline JSON)
         #[arg(long)]
         data: String,
@@ -42,9 +42,9 @@ pub enum ApiKeyCommands {
     },
     /// Update an API key
     Update {
-        /// Team slug
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long)]
-        team: String,
+        team: Option<String>,
         /// API Key ID
         #[arg(short, long)]
         id: String,
@@ -57,9 +57,9 @@ pub enum ApiKeyCommands {
     },
     /// Delete an API key
     Delete {
-        /// Team slug
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long)]
-        team: String,
+        team: Option<String>,
         /// API Key ID
         #[arg(short, long)]
         id: String,
@@ -99,20 +99,38 @@ pub struct ApiKeyPermissions {
 }
 
 impl ApiKeyCommands {
-    pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, global_team: &Option<String>) -> Result<()> {
         match self {
-            ApiKeyCommands::List { team, format } => list_api_keys(client, team, format).await,
-            ApiKeyCommands::Get { team, id, format } => get_api_key(client, team, id, format).await,
+            ApiKeyCommands::List { team, format } => {
+                let effective_team = team.as_ref().or(global_team.as_ref())
+                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                list_api_keys(client, effective_team, format).await
+            }
+            ApiKeyCommands::Get { team, id, format } => {
+                let effective_team = team.as_ref().or(global_team.as_ref())
+                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                get_api_key(client, effective_team, id, format).await
+            }
             ApiKeyCommands::Create { team, data, format } => {
-                create_api_key(client, team, data, format).await
+                let effective_team = team.as_ref().or(global_team.as_ref())
+                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                create_api_key(client, effective_team, data, format).await
             }
             ApiKeyCommands::Update {
                 team,
                 id,
                 data,
                 format,
-            } => update_api_key(client, team, id, data, format).await,
-            ApiKeyCommands::Delete { team, id } => delete_api_key(client, team, id).await,
+            } => {
+                let effective_team = team.as_ref().or(global_team.as_ref())
+                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                update_api_key(client, effective_team, id, data, format).await
+            },
+            ApiKeyCommands::Delete { team, id } => {
+                let effective_team = team.as_ref().or(global_team.as_ref())
+                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                delete_api_key(client, effective_team, id).await
+            },
         }
     }
 }

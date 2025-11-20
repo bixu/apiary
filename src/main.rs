@@ -396,7 +396,7 @@ async fn execute_command(client: &HoneycombClient, command: Commands, team: &Opt
         Commands::Slos { command } => command.execute(client).await,
         Commands::BurnAlerts { command } => command.execute(client).await,
         Commands::Environments { command } => command.execute(&client, team).await,
-        Commands::ApiKeys { command } => command.execute(client).await,
+        Commands::ApiKeys { command } => command.execute(&client, team).await,
         Commands::CalculatedFields { command } => command.execute(client).await,
         Commands::DatasetDefinitions { command } => command.execute(client).await,
         Commands::MarkerSettings { command } => command.execute(client).await,
