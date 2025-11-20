@@ -12,6 +12,9 @@ pub enum MarkerSettingCommands {
         /// Dataset slug
         #[arg(short, long)]
         dataset: String,
+        /// Environment slug (optional, uses HONEYCOMB_ENVIRONMENT env var if not specified)
+        #[arg(short, long, env = "HONEYCOMB_ENVIRONMENT")]
+        environment: Option<String>,
         /// Output format
         #[arg(short, long, default_value = "table")]
         format: OutputFormat,
@@ -67,8 +70,8 @@ pub struct MarkerSetting {
 impl MarkerSettingCommands {
     pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
         match self {
-            MarkerSettingCommands::List { dataset, format } => {
-                list_marker_settings(client, dataset, format).await
+            MarkerSettingCommands::List { dataset, environment, format } => {
+                list_marker_settings(client, dataset, environment.as_deref(), format).await
             }
             MarkerSettingCommands::Create {
                 dataset,
@@ -91,10 +94,28 @@ impl MarkerSettingCommands {
 async fn list_marker_settings(
     client: &HoneycombClient,
     dataset: &str,
+    environment: Option<&str>,
     format: &OutputFormat,
 ) -> Result<()> {
+    use crate::common::require_valid_environment;
+    use std::collections::HashMap;
+
+    // If environment is provided, validate it exists
+    if let Some(env) = environment {
+        let team = std::env::var("HONEYCOMB_TEAM")
+            .unwrap_or_else(|_| "default".to_string());
+        require_valid_environment(client, &team, env).await?;
+    }
+
     let path = format!("/1/marker_settings/{}", dataset);
-    let response = client.get(&path, None).await?;
+    
+    // Add environment as query parameter if provided
+    let mut query_params = HashMap::new();
+    if let Some(env) = environment {
+        query_params.insert("environment".to_string(), env.to_string());
+    }
+    
+    let response = client.get(&path, if query_params.is_empty() { None } else { Some(&query_params) }).await?;
 
     match format {
         OutputFormat::Json => {
