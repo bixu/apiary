@@ -287,66 +287,66 @@ fn display_resource_usage() {
     println!();
     println!("SUPPORTED HONEYCOMB API RESOURCES:");
     println!();
-    
+
     println!("Authentication & Management:");
     println!("  auth              - Authentication operations and token validation");
     println!("  api-keys          - API key management (v2 Management API)");
     println!("  environments      - Environment management (v2 Management API)");
     println!();
-    
+
     println!("Data & Schema:");
     println!("  datasets          - Dataset management and configuration");
     println!("  columns           - Column definitions and metadata");
     println!("  calculated-fields - Derived column calculations");
     println!("  dataset-definitions - Dataset schema definitions");
     println!();
-    
+
     println!("Queries & Analysis:");
     println!("  queries           - Query creation, execution, and management");
     println!("  query-results     - Query result retrieval and status");
     println!("  query-annotations - Query annotation management");
     println!("  boards            - Dashboard and board management");
     println!();
-    
+
     println!("Events & Data Ingestion:");
     println!("  events            - Send events to Honeycomb datasets");
     println!();
-    
+
     println!("Alerting & Monitoring:");
     println!("  triggers          - Alert trigger configuration");
     println!("  slos              - Service Level Objective management");
     println!("  burn-alerts       - SLO burn alert configuration");
     println!("  recipients        - Notification recipient management");
     println!();
-    
+
     println!("Visualization & Annotation:");
     println!("  markers           - Event marker management");
     println!("  marker-settings   - Marker display configuration");
     println!();
-    
+
     println!("Service Management:");
     println!("  service-maps      - Service dependency mapping");
     println!("  reporting         - Historical SLO and metrics reporting");
     println!();
-    
+
     println!("USAGE:");
     println!("  apiary <RESOURCE> --help           Show help for a specific resource");
     println!("  apiary <RESOURCE> <COMMAND> --help Show help for a specific command");
     println!();
-    
+
     println!("EXAMPLES:");
     println!("  apiary datasets list               List all datasets");
     println!("  apiary queries create --help       Show query creation options");
     println!("  apiary events --dataset my-dataset --data event.json");
     println!("  apiary triggers list --dataset my-dataset");
     println!();
-    
+
     println!("AUTHENTICATION:");
     println!("  Set HONEYCOMB_MANAGEMENT_API_KEY for v2 endpoints");
     println!("  Set HONEYCOMB_CONFIGURATION_API_KEY for v1 endpoints");
     println!("  Or use --management-key / --config-key flags");
     println!();
-    
+
     println!("For detailed help on any resource, use: apiary <resource> --help");
 }
 
