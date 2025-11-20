@@ -295,7 +295,7 @@ async fn execute_command(
 ) -> Result<()> {
     match command {
         Commands::Auth { command } => command.execute(client).await,
-        Commands::Datasets { command } => command.execute(&client, team).await,
+        Commands::Datasets { command } => command.execute(client, team).await,
         Commands::Columns { command } => command.execute(client).await,
         Commands::Triggers { command } => command.execute(client).await,
         Commands::Boards { command } => command.execute(client).await,
@@ -303,8 +303,8 @@ async fn execute_command(
         Commands::Recipients { command } => command.execute(client).await,
         Commands::Slos { command } => command.execute(client).await,
         Commands::BurnAlerts { command } => command.execute(client).await,
-        Commands::Environments { command } => command.execute(&client, team).await,
-        Commands::ApiKeys { command } => command.execute(&client, team).await,
+        Commands::Environments { command } => command.execute(client, team).await,
+        Commands::ApiKeys { command } => command.execute(client, team).await,
         Commands::CalculatedFields { command } => command.execute(client).await,
         Commands::DatasetDefinitions { command } => command.execute(client).await,
         Commands::MarkerSettings { command } => command.execute(client).await,
