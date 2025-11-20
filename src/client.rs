@@ -151,7 +151,7 @@ impl HoneycombClient {
         self.management_key.is_some()
     }
 
-    /// Check if we have a valid Configuration Key  
+    /// Check if we have a valid Configuration Key
     pub fn has_config_key(&self) -> bool {
         self.config_key.is_some()
     }
