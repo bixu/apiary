@@ -177,9 +177,9 @@ async fn show_key_info(client: &HoneycombClient) -> Result<()> {
 
     println!();
     println!("💡 Set environment variables:");
-    println!("   export HONEYCOMB_MANAGEMENT_API_KEY_ID=\"hcx**_your_management_key_id\"");
-    println!("   export HONEYCOMB_MANAGEMENT_API_KEY=\"your_management_key_secret\"");
-    println!("   export HONEYCOMB_CONFIGURATION_API_KEY=\"your_configuration_key\"");
+    println!("   export HONEYCOMB_MANAGEMENT_API_KEY_ID=\"hc***\"");
+    println!("   export HONEYCOMB_MANAGEMENT_API_KEY=\"***\"");
+    println!("   export HONEYCOMB_CONFIGURATION_API_KEY=\"***\"");
 
     Ok(())
 }

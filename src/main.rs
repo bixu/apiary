@@ -31,7 +31,7 @@ struct Cli {
     /// Honeycomb Management API key ID for v2 endpoints (format: hcxmk_...)
     #[arg(
         long,
-        env = "HONEYCOMB_MANAGEMENT_KEY_ID",
+        env = "HONEYCOMB_MANAGEMENT_API_KEY_ID",
         help = "Management API key ID for v2 endpoints"
     )]
     management_key_id: Option<String>,
@@ -39,7 +39,7 @@ struct Cli {
     /// Honeycomb Management API key secret for v2 endpoints
     #[arg(
         long,
-        env = "HONEYCOMB_MANAGEMENT_KEY",
+        env = "HONEYCOMB_MANAGEMENT_API_KEY",
         help = "Management API key secret for v2 endpoints"
     )]
     management_key_secret: Option<String>,
