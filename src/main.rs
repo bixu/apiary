@@ -300,7 +300,7 @@ async fn main() -> Result<()> {
     let client = HoneycombClient::new(management_key, config_key, api_url);
 
     match cli.command {
-        Some(command) => execute_command(&client, command).await,
+        Some(command) => execute_command(&client, command, &cli.team).await,
         None => {
             display_resource_usage();
             Ok(())
@@ -383,7 +383,7 @@ fn display_resource_usage() {
     println!("For detailed help on any resource, use: apiary <resource> --help");
 }
 
-async fn execute_command(client: &HoneycombClient, command: Commands) -> Result<()> {
+async fn execute_command(client: &HoneycombClient, command: Commands, team: &Option<String>) -> Result<()> {
     match command {
         Commands::Auth { command } => command.execute(client).await,
         Commands::Datasets { command } => command.execute(client).await,
@@ -395,7 +395,7 @@ async fn execute_command(client: &HoneycombClient, command: Commands) -> Result<
         Commands::Recipients { command } => command.execute(client).await,
         Commands::Slos { command } => command.execute(client).await,
         Commands::BurnAlerts { command } => command.execute(client).await,
-        Commands::Environments { command } => command.execute(client).await,
+        Commands::Environments { command } => command.execute(&client, team).await,
         Commands::ApiKeys { command } => command.execute(client).await,
         Commands::CalculatedFields { command } => command.execute(client).await,
         Commands::DatasetDefinitions { command } => command.execute(client).await,

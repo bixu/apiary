@@ -8,18 +8,18 @@ use serde::{Deserialize, Serialize};
 pub enum EnvironmentCommands {
     /// List all environments in a team
     List {
-        /// Team slug
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long)]
-        team: String,
+        team: Option<String>,
         /// Output format
         #[arg(short, long, default_value = "table")]
         format: OutputFormat,
     },
     /// Get a specific environment
     Get {
-        /// Team slug
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long)]
-        team: String,
+        team: Option<String>,
         /// Environment ID
         #[arg(short, long)]
         id: String,
@@ -29,9 +29,9 @@ pub enum EnvironmentCommands {
     },
     /// Create a new environment
     Create {
-        /// Team slug
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long)]
-        team: String,
+        team: Option<String>,
         /// Environment data (JSON file path or inline JSON)
         #[arg(long)]
         data: String,
@@ -41,9 +41,9 @@ pub enum EnvironmentCommands {
     },
     /// Update an environment
     Update {
-        /// Team slug
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long)]
-        team: String,
+        team: Option<String>,
         /// Environment ID
         #[arg(short, long)]
         id: String,
@@ -56,9 +56,9 @@ pub enum EnvironmentCommands {
     },
     /// Delete an environment
     Delete {
-        /// Team slug
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long)]
-        team: String,
+        team: Option<String>,
         /// Environment ID
         #[arg(short, long)]
         id: String,
@@ -114,24 +114,38 @@ pub struct EnvironmentSettings {
 }
 
 impl EnvironmentCommands {
-    pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, global_team: &Option<String>) -> Result<()> {
         match self {
             EnvironmentCommands::List { team, format } => {
-                list_environments(client, team, format).await
+                let effective_team = team.as_ref().or(global_team.as_ref())
+                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                list_environments(client, effective_team, format).await
             }
             EnvironmentCommands::Get { team, id, format } => {
-                get_environment(client, team, id, format).await
+                let effective_team = team.as_ref().or(global_team.as_ref())
+                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                get_environment(client, effective_team, id, format).await
             }
             EnvironmentCommands::Create { team, data, format } => {
-                create_environment(client, team, data, format).await
+                let effective_team = team.as_ref().or(global_team.as_ref())
+                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                create_environment(client, effective_team, data, format).await
             }
             EnvironmentCommands::Update {
                 team,
                 id,
                 data,
                 format,
-            } => update_environment(client, team, id, data, format).await,
-            EnvironmentCommands::Delete { team, id } => delete_environment(client, team, id).await,
+            } => {
+                let effective_team = team.as_ref().or(global_team.as_ref())
+                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                update_environment(client, effective_team, id, data, format).await
+            },
+            EnvironmentCommands::Delete { team, id } => {
+                let effective_team = team.as_ref().or(global_team.as_ref())
+                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                delete_environment(client, effective_team, id).await
+            },
         }
     }
 }

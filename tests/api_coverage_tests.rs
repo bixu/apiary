@@ -110,11 +110,11 @@ mod environments {
             HoneycombClient::new(Some("test-key".to_string()), None, Some(mock_server.uri()));
 
         let command = EnvironmentCommands::List {
-            team: "test-team".to_string(),
+            team: Some("test-team".to_string()),
             format: OutputFormat::Json,
         };
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, &None).await;
         assert!(result.is_ok());
     }
 }
