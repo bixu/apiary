@@ -28,13 +28,21 @@ use common::OutputFormat;
 #[command(version = "1.0.0")]
 #[command(about = "A comprehensive CLI for Honeycomb API with dual authentication", long_about = None)]
 struct Cli {
-    /// Honeycomb Management API key for v2 endpoints (format: hcxmk_[id]:[secret])
+    /// Honeycomb Management API key ID for v2 endpoints (format: hcxmk_...)
     #[arg(
         long,
-        env = "HONEYCOMB_MANAGEMENT_API_KEY",
-        help = "Management API key for v2 endpoints"
+        env = "HONEYCOMB_MANAGEMENT_KEY_ID",
+        help = "Management API key ID for v2 endpoints"
     )]
-    management_key: Option<String>,
+    management_key_id: Option<String>,
+
+    /// Honeycomb Management API key secret for v2 endpoints
+    #[arg(
+        long,
+        env = "HONEYCOMB_MANAGEMENT_KEY",
+        help = "Management API key secret for v2 endpoints"
+    )]
+    management_key_secret: Option<String>,
 
     /// Honeycomb Configuration API key for v1 endpoints (64 chars, starts with hcaik_)
     #[arg(
@@ -49,13 +57,17 @@ struct Cli {
         short,
         long,
         env = "HONEYCOMB_API_KEY",
-        help = "Legacy API key (use management_key/config_key instead)"
+        help = "Legacy API key (use management_key_id/management_key_secret/config_key instead)"
     )]
     api_key: Option<String>,
 
     /// Honeycomb API base URL
     #[arg(long, env = "HONEYCOMB_API_URL")]
     api_url: Option<String>,
+
+    /// Honeycomb API endpoint (e.g., eu1.api.honeycomb.io)
+    #[arg(long, env = "HONEYCOMB_API_ENDPOINT")]
+    api_endpoint: Option<String>,
 
     /// Team slug (for v2 API endpoints)
     #[arg(long, env = "HONEYCOMB_TEAM")]
@@ -234,16 +246,19 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     // Determine which keys to use
-    let management_key = cli.management_key.or_else(|| {
-        // Fall back to api_key if it looks like a management key
-        cli.api_key.as_ref().and_then(|key| {
-            if key.starts_with("hcxmk_") || key.starts_with("hcamk_") {
-                Some(key.clone())
-            } else {
-                None
-            }
-        })
-    });
+    let management_key =
+        if let (Some(id), Some(secret)) = (&cli.management_key_id, &cli.management_key_secret) {
+            Some(format!("{}:{}", id, secret))
+        } else {
+            // Fall back to api_key if it looks like a management key
+            cli.api_key.as_ref().and_then(|key| {
+                if key.starts_with("hcxmk_") || key.starts_with("hcamk_") {
+                    Some(key.clone())
+                } else {
+                    None
+                }
+            })
+        };
 
     let config_key = cli.config_key.or_else(|| {
         // Fall back to api_key if it looks like a config key
@@ -256,6 +271,17 @@ async fn main() -> Result<()> {
         })
     });
 
+    // Construct the API URL - prioritize api_url, then construct from api_endpoint
+    let api_url = cli.api_url.or_else(|| {
+        cli.api_endpoint.map(|endpoint| {
+            if endpoint.starts_with("http://") || endpoint.starts_with("https://") {
+                endpoint
+            } else {
+                format!("https://{}", endpoint)
+            }
+        })
+    });
+
     if cli.verbose {
         if let Some(ref mgmt_key) = management_key {
             eprintln!("Management Key: {}...", &mgmt_key[..8]);
@@ -263,7 +289,7 @@ async fn main() -> Result<()> {
         if let Some(ref conf_key) = config_key {
             eprintln!("Configuration Key: {}...", &conf_key[..8]);
         }
-        if let Some(ref url) = cli.api_url {
+        if let Some(ref url) = api_url {
             eprintln!("API URL: {}", url);
         }
         if let Some(ref team) = cli.team {
@@ -271,7 +297,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    let client = HoneycombClient::new(management_key, config_key, cli.api_url);
+    let client = HoneycombClient::new(management_key, config_key, api_url);
 
     match cli.command {
         Some(command) => execute_command(&client, command).await,
@@ -342,9 +368,16 @@ fn display_resource_usage() {
     println!();
 
     println!("AUTHENTICATION:");
-    println!("  Set HONEYCOMB_MANAGEMENT_API_KEY for v2 endpoints");
+    println!(
+        "  Set HONEYCOMB_MANAGEMENT_API_KEY_ID and HONEYCOMB_MANAGEMENT_API_KEY for v2 endpoints"
+    );
     println!("  Set HONEYCOMB_CONFIGURATION_API_KEY for v1 endpoints");
-    println!("  Or use --management-key / --config-key flags");
+    println!("  Or use --management-key-id / --management-key-secret / --config-key flags");
+    println!();
+
+    println!("ENDPOINT CONFIGURATION:");
+    println!("  Set HONEYCOMB_API_ENDPOINT for custom endpoints (e.g., api.eu1.honeycomb.io)");
+    println!("  Or use --api-endpoint / --api-url flags");
     println!();
 
     println!("For detailed help on any resource, use: apiary <resource> --help");

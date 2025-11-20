@@ -53,7 +53,7 @@ impl HoneycombClient {
             } else {
                 return Err(anyhow::anyhow!(
                     "v2 endpoint '{}' requires a Management Key.\n\
-                     Set HONEYCOMB_MANAGEMENT_API_KEY environment variable.",
+                     Set HONEYCOMB_MANAGEMENT_API_KEY_ID and HONEYCOMB_MANAGEMENT_API_KEY environment variables.",
                     path
                 ));
             }
