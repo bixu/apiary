@@ -59,12 +59,9 @@ jobs:
     - name: Lint with clippy
       run: cargo clippy --all-targets --all-features -- -D warnings
     
-    - name: Run unit tests
-      run: cargo test --lib --bins
-    
-    - name: Run integration tests
-      run: cargo test --test integration_tests
-    
+    - name: Run tests
+      run: cargo test
+
     - name: Run all tests with coverage
       if: matrix.rust == 'stable'
       run: |
