@@ -1,21 +1,21 @@
-mod client;
-mod common;
+mod api_keys;
 mod auth;
-mod datasets;
-mod columns;
-mod triggers;
-mod queries;
 mod boards;
+mod burn_alerts;
+mod calculated_fields;
+mod client;
+mod columns;
+mod common;
+mod dataset_definitions;
+mod datasets;
+mod environments;
+mod marker_settings;
 mod markers;
+mod queries;
+mod query_annotations;
 mod recipients;
 mod slos;
-mod burn_alerts;
-mod environments;
-mod api_keys;
-mod calculated_fields;
-mod dataset_definitions;
-mod marker_settings;
-mod query_annotations;
+mod triggers;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -29,33 +29,46 @@ use common::OutputFormat;
 #[command(about = "A comprehensive CLI for Honeycomb API with dual authentication", long_about = None)]
 struct Cli {
     /// Honeycomb Management API key for v2 endpoints (format: hcxmk_[id]:[secret])
-    #[arg(long, env = "HONEYCOMB_MANAGEMENT_API_KEY", help = "Management API key for v2 endpoints")]
+    #[arg(
+        long,
+        env = "HONEYCOMB_MANAGEMENT_API_KEY",
+        help = "Management API key for v2 endpoints"
+    )]
     management_key: Option<String>,
-    
+
     /// Honeycomb Configuration API key for v1 endpoints (64 chars, starts with hcaik_)
-    #[arg(long, env = "HONEYCOMB_CONFIGURATION_API_KEY", help = "Configuration API key for v1 endpoints")]
+    #[arg(
+        long,
+        env = "HONEYCOMB_CONFIGURATION_API_KEY",
+        help = "Configuration API key for v1 endpoints"
+    )]
     config_key: Option<String>,
-    
+
     /// Legacy: Honeycomb API key (will use as Management key if others not provided)
-    #[arg(short, long, env = "HONEYCOMB_API_KEY", help = "Legacy API key (use management_key/config_key instead)")]
+    #[arg(
+        short,
+        long,
+        env = "HONEYCOMB_API_KEY",
+        help = "Legacy API key (use management_key/config_key instead)"
+    )]
     api_key: Option<String>,
-    
+
     /// Honeycomb API base URL
     #[arg(long, env = "HONEYCOMB_API_URL")]
     api_url: Option<String>,
-    
+
     /// Team slug (for v2 API endpoints)
     #[arg(long, env = "HONEYCOMB_TEAM")]
     team: Option<String>,
-    
+
     /// Global output format override
     #[arg(long, global = true)]
     format: Option<OutputFormat>,
-    
+
     /// Verbose output
     #[arg(short, long, global = true)]
     verbose: bool,
-    
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -219,7 +232,7 @@ enum ReportingCommands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
-    
+
     // Determine which keys to use
     let management_key = cli.management_key.or_else(|| {
         // Fall back to api_key if it looks like a management key
@@ -231,7 +244,7 @@ async fn main() -> Result<()> {
             }
         })
     });
-    
+
     let config_key = cli.config_key.or_else(|| {
         // Fall back to api_key if it looks like a config key
         cli.api_key.as_ref().and_then(|key| {
@@ -242,7 +255,7 @@ async fn main() -> Result<()> {
             }
         })
     });
-    
+
     if cli.verbose {
         if let Some(ref mgmt_key) = management_key {
             eprintln!("Management Key: {}...", &mgmt_key[..8]);
@@ -257,98 +270,68 @@ async fn main() -> Result<()> {
             eprintln!("Team: {}", team);
         }
     }
-    
-    let client = HoneycombClient::new(
-        management_key,
-        config_key,
-        cli.api_url,
-        cli.team,
-    );
-    
+
+    let client = HoneycombClient::new(management_key, config_key, cli.api_url, cli.team);
+
     match cli.command {
-        Commands::Auth { command } => {
-            command.execute(&client).await
-        }
-        Commands::Datasets { command } => {
-            command.execute(&client).await
-        }
-        Commands::Columns { command } => {
-            command.execute(&client).await
-        }
-        Commands::Triggers { command } => {
-            command.execute(&client).await
-        }
-        Commands::Queries { command } => {
-            command.execute(&client).await
-        }
-        Commands::Boards { command } => {
-            command.execute(&client).await
-        }
-        Commands::Markers { command } => {
-            command.execute(&client).await
-        }
-        Commands::Recipients { command } => {
-            command.execute(&client).await
-        }
-        Commands::Slos { command } => {
-            command.execute(&client).await
-        }
-        Commands::BurnAlerts { command } => {
-            command.execute(&client).await
-        }
-        Commands::Environments { command } => {
-            command.execute(&client).await
-        }
-        Commands::ApiKeys { command } => {
-            command.execute(&client).await
-        }
-        Commands::CalculatedFields { command } => {
-            command.execute(&client).await
-        }
-        Commands::DatasetDefinitions { command } => {
-            command.execute(&client).await
-        }
-        Commands::MarkerSettings { command } => {
-            command.execute(&client).await
-        }
-        Commands::QueryAnnotations { command } => {
-            command.execute(&client).await
-        }
-        Commands::Events { dataset, data, batch } => {
-            send_events(&client, &dataset, &data, batch).await
-        }
+        Commands::Auth { command } => command.execute(&client).await,
+        Commands::Datasets { command } => command.execute(&client).await,
+        Commands::Columns { command } => command.execute(&client).await,
+        Commands::Triggers { command } => command.execute(&client).await,
+        Commands::Queries { command } => command.execute(&client).await,
+        Commands::Boards { command } => command.execute(&client).await,
+        Commands::Markers { command } => command.execute(&client).await,
+        Commands::Recipients { command } => command.execute(&client).await,
+        Commands::Slos { command } => command.execute(&client).await,
+        Commands::BurnAlerts { command } => command.execute(&client).await,
+        Commands::Environments { command } => command.execute(&client).await,
+        Commands::ApiKeys { command } => command.execute(&client).await,
+        Commands::CalculatedFields { command } => command.execute(&client).await,
+        Commands::DatasetDefinitions { command } => command.execute(&client).await,
+        Commands::MarkerSettings { command } => command.execute(&client).await,
+        Commands::QueryAnnotations { command } => command.execute(&client).await,
+        Commands::Events {
+            dataset,
+            data,
+            batch,
+        } => send_events(&client, &dataset, &data, batch).await,
         Commands::QueryResults { dataset, command } => {
             execute_query_result_command(&client, &dataset, command).await
         }
-        Commands::ServiceMaps { command } => {
-            execute_service_map_command(&client, command).await
-        }
-        Commands::Reporting { command } => {
-            execute_reporting_command(&client, command).await
-        }
+        Commands::ServiceMaps { command } => execute_service_map_command(&client, command).await,
+        Commands::Reporting { command } => execute_reporting_command(&client, command).await,
     }
 }
 
-async fn send_events(client: &HoneycombClient, dataset: &str, data: &str, batch: bool) -> Result<()> {
+async fn send_events(
+    client: &HoneycombClient,
+    dataset: &str,
+    data: &str,
+    batch: bool,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         common::read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = if batch {
         format!("/1/batch/{}", dataset)
     } else {
         format!("/1/events/{}", dataset)
     };
-    
+
     let response = client.post(&path, &json_data).await?;
     println!("{}", common::pretty_print_json(&response)?);
-    
+
     Ok(())
 }
 
-async fn execute_query_result_command(client: &HoneycombClient, dataset: &str, command: QueryResultCommands) -> Result<()> {
+async fn execute_query_result_command(
+    client: &HoneycombClient,
+    dataset: &str,
+    command: QueryResultCommands,
+) -> Result<()> {
     match command {
         QueryResultCommands::Create { query_id } => {
             let data = serde_json::json!({ "query_id": query_id });
@@ -365,7 +348,10 @@ async fn execute_query_result_command(client: &HoneycombClient, dataset: &str, c
     Ok(())
 }
 
-async fn execute_service_map_command(client: &HoneycombClient, command: ServiceMapCommands) -> Result<()> {
+async fn execute_service_map_command(
+    client: &HoneycombClient,
+    command: ServiceMapCommands,
+) -> Result<()> {
     match command {
         ServiceMapCommands::CreateDependencyRequest { data } => {
             let json_data = if std::path::Path::new(&data).exists() {
@@ -373,8 +359,10 @@ async fn execute_service_map_command(client: &HoneycombClient, command: ServiceM
             } else {
                 serde_json::from_str(&data)?
             };
-            
-            let response = client.post("/1/maps/dependencies/requests", &json_data).await?;
+
+            let response = client
+                .post("/1/maps/dependencies/requests", &json_data)
+                .await?;
             println!("{}", common::pretty_print_json(&response)?);
         }
         ServiceMapCommands::GetDependencyRequest { id } => {
@@ -386,7 +374,10 @@ async fn execute_service_map_command(client: &HoneycombClient, command: ServiceM
     Ok(())
 }
 
-async fn execute_reporting_command(client: &HoneycombClient, command: ReportingCommands) -> Result<()> {
+async fn execute_reporting_command(
+    client: &HoneycombClient,
+    command: ReportingCommands,
+) -> Result<()> {
     match command {
         ReportingCommands::SloHistory { data } => {
             let json_data = if std::path::Path::new(&data).exists() {
@@ -394,8 +385,10 @@ async fn execute_reporting_command(client: &HoneycombClient, command: ReportingC
             } else {
                 serde_json::from_str(&data)?
             };
-            
-            let response = client.post("/1/reporting/slos/historical", &json_data).await?;
+
+            let response = client
+                .post("/1/reporting/slos/historical", &json_data)
+                .await?;
             println!("{}", common::pretty_print_json(&response)?);
         }
     }

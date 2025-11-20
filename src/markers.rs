@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{OutputFormat, pretty_print_json, read_json_file};
+use crate::common::{pretty_print_json, read_json_file, OutputFormat};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
@@ -68,26 +68,31 @@ pub struct Marker {
 impl MarkerCommands {
     pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
         match self {
-            MarkerCommands::List { dataset, format } => {
-                list_markers(client, dataset, format).await
-            }
-            MarkerCommands::Create { dataset, data, format } => {
-                create_marker(client, dataset, data, format).await
-            }
-            MarkerCommands::Update { dataset, id, data, format } => {
-                update_marker(client, dataset, id, data, format).await
-            }
-            MarkerCommands::Delete { dataset, id } => {
-                delete_marker(client, dataset, id).await
-            }
+            MarkerCommands::List { dataset, format } => list_markers(client, dataset, format).await,
+            MarkerCommands::Create {
+                dataset,
+                data,
+                format,
+            } => create_marker(client, dataset, data, format).await,
+            MarkerCommands::Update {
+                dataset,
+                id,
+                data,
+                format,
+            } => update_marker(client, dataset, id, data, format).await,
+            MarkerCommands::Delete { dataset, id } => delete_marker(client, dataset, id).await,
         }
     }
 }
 
-async fn list_markers(client: &HoneycombClient, dataset: &str, format: &OutputFormat) -> Result<()> {
+async fn list_markers(
+    client: &HoneycombClient,
+    dataset: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let path = format!("/1/markers/{}", dataset);
     let response = client.get(&path, None).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -97,14 +102,18 @@ async fn list_markers(client: &HoneycombClient, dataset: &str, format: &OutputFo
         }
         OutputFormat::Table => {
             if let Value::Array(markers) = response {
-                println!("{:<15} {:<50} {:<20} {:<10} {}", "ID", "Message", "Timestamp", "Color", "URL");
+                println!(
+                    "{:<15} {:<50} {:<20} {:<10} {}",
+                    "ID", "Message", "Timestamp", "Color", "URL"
+                );
                 println!("{:-<110}", "");
-                
+
                 for marker in markers {
                     if let Ok(m) = serde_json::from_value::<Marker>(marker) {
                         let url = m.url.unwrap_or_else(|| "N/A".to_string());
                         let color = m.color.unwrap_or_else(|| "N/A".to_string());
-                        println!("{:<15} {:<50} {:<20} {:<10} {}", 
+                        println!(
+                            "{:<15} {:<50} {:<20} {:<10} {}",
                             m.id,
                             m.message,
                             m.timestamp.format("%Y-%m-%d %H:%M"),
@@ -116,20 +125,25 @@ async fn list_markers(client: &HoneycombClient, dataset: &str, format: &OutputFo
             }
         }
     }
-    
+
     Ok(())
 }
 
-async fn create_marker(client: &HoneycombClient, dataset: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn create_marker(
+    client: &HoneycombClient,
+    dataset: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/1/markers/{}", dataset);
     let response = client.post(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -138,20 +152,26 @@ async fn create_marker(client: &HoneycombClient, dataset: &str, data: &str, form
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
-async fn update_marker(client: &HoneycombClient, dataset: &str, id: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn update_marker(
+    client: &HoneycombClient,
+    dataset: &str,
+    id: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/1/markers/{}/{}", dataset, id);
     let response = client.put(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -160,15 +180,18 @@ async fn update_marker(client: &HoneycombClient, dataset: &str, id: &str, data: 
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
 async fn delete_marker(client: &HoneycombClient, dataset: &str, id: &str) -> Result<()> {
     let path = format!("/1/markers/{}/{}", dataset, id);
     client.delete(&path).await?;
-    
-    println!("Marker '{}' in dataset '{}' deleted successfully", id, dataset);
-    
+
+    println!(
+        "Marker '{}' in dataset '{}' deleted successfully",
+        id, dataset
+    );
+
     Ok(())
 }

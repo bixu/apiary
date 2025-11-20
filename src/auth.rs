@@ -80,19 +80,15 @@ pub struct TeamAttributes {
 impl AuthCommands {
     pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
         match self {
-            AuthCommands::Validate { format } => {
-                validate_auth(client, format).await
-            }
-            AuthCommands::Info => {
-                show_key_info(client).await
-            }
+            AuthCommands::Validate { format } => validate_auth(client, format).await,
+            AuthCommands::Info => show_key_info(client).await,
         }
     }
 }
 
 async fn validate_auth(client: &HoneycombClient, format: &OutputFormat) -> Result<()> {
     let response = client.get("/2/auth", None).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -108,11 +104,24 @@ async fn validate_auth(client: &HoneycombClient, format: &OutputFormat) -> Resul
                 println!("Name: {}", auth_response.data.attributes.name);
                 println!("Type: {}", auth_response.data.attributes.key_type);
                 println!("ID: {}", auth_response.data.id);
-                println!("Status: {}", if auth_response.data.attributes.disabled { "Disabled" } else { "Active" });
-                println!("Created: {}", auth_response.data.attributes.timestamps.created);
-                println!("Updated: {}", auth_response.data.attributes.timestamps.updated);
+                println!(
+                    "Status: {}",
+                    if auth_response.data.attributes.disabled {
+                        "Disabled"
+                    } else {
+                        "Active"
+                    }
+                );
+                println!(
+                    "Created: {}",
+                    auth_response.data.attributes.timestamps.created
+                );
+                println!(
+                    "Updated: {}",
+                    auth_response.data.attributes.timestamps.updated
+                );
                 println!();
-                
+
                 if let Some(team) = auth_response.included.first() {
                     println!("Team Information:");
                     println!("=================");
@@ -121,7 +130,7 @@ async fn validate_auth(client: &HoneycombClient, format: &OutputFormat) -> Resul
                     println!("ID: {}", team.id);
                     println!();
                 }
-                
+
                 println!("Scopes:");
                 println!("=======");
                 for scope in &auth_response.data.attributes.scopes {
@@ -132,38 +141,44 @@ async fn validate_auth(client: &HoneycombClient, format: &OutputFormat) -> Resul
             }
         }
     }
-    
+
     Ok(())
 }
 
 async fn show_key_info(client: &HoneycombClient) -> Result<()> {
     println!("🔑 API Key Information");
     println!("======================");
-    
+
     if client.has_management_key() {
         if let Some(mgmt_key) = client.get_key_for_endpoint("/2/auth") {
-            println!("Management Key: {} (for v2 endpoints)", &mgmt_key[..8.min(mgmt_key.len())]);
+            println!(
+                "Management Key: {} (for v2 endpoints)",
+                &mgmt_key[..8.min(mgmt_key.len())]
+            );
             println!("✅ Can access v2 APIs (Bearer authentication)");
         }
     } else {
         println!("❌ No Management Key - cannot access v2 APIs");
     }
-    
+
     println!();
-    
+
     if client.has_config_key() {
         if let Some(config_key) = client.get_key_for_endpoint("/1/datasets") {
-            println!("Configuration Key: {} (for v1 endpoints)", &config_key[..8.min(config_key.len())]);
+            println!(
+                "Configuration Key: {} (for v1 endpoints)",
+                &config_key[..8.min(config_key.len())]
+            );
             println!("✅ Can access v1 APIs (X-Honeycomb-Team authentication)");
         }
     } else {
         println!("❌ No Configuration Key - cannot access v1 APIs");
     }
-    
+
     println!();
     println!("💡 Set environment variables:");
     println!("   export HONEYCOMB_MANAGEMENT_API_KEY=\"hcxmk_your_management_key\"");
     println!("   export HONEYCOMB_CONFIGURATION_API_KEY=\"your_configuration_key\"");
-    
+
     Ok(())
 }

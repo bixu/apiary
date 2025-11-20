@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{OutputFormat, pretty_print_json, read_json_file};
+use crate::common::{pretty_print_json, read_json_file, OutputFormat};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
@@ -70,12 +70,17 @@ impl MarkerSettingCommands {
             MarkerSettingCommands::List { dataset, format } => {
                 list_marker_settings(client, dataset, format).await
             }
-            MarkerSettingCommands::Create { dataset, data, format } => {
-                create_marker_setting(client, dataset, data, format).await
-            }
-            MarkerSettingCommands::Update { dataset, id, data, format } => {
-                update_marker_setting(client, dataset, id, data, format).await
-            }
+            MarkerSettingCommands::Create {
+                dataset,
+                data,
+                format,
+            } => create_marker_setting(client, dataset, data, format).await,
+            MarkerSettingCommands::Update {
+                dataset,
+                id,
+                data,
+                format,
+            } => update_marker_setting(client, dataset, id, data, format).await,
             MarkerSettingCommands::Delete { dataset, id } => {
                 delete_marker_setting(client, dataset, id).await
             }
@@ -83,10 +88,14 @@ impl MarkerSettingCommands {
     }
 }
 
-async fn list_marker_settings(client: &HoneycombClient, dataset: &str, format: &OutputFormat) -> Result<()> {
+async fn list_marker_settings(
+    client: &HoneycombClient,
+    dataset: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let path = format!("/1/marker_settings/{}", dataset);
     let response = client.get(&path, None).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -98,10 +107,11 @@ async fn list_marker_settings(client: &HoneycombClient, dataset: &str, format: &
             if let Value::Array(settings) = response {
                 println!("{:<15} {:<30} {:<15} {}", "ID", "Type", "Color", "Created");
                 println!("{:-<70}", "");
-                
+
                 for setting in settings {
                     if let Ok(ms) = serde_json::from_value::<MarkerSetting>(setting) {
-                        println!("{:<15} {:<30} {:<15} {}", 
+                        println!(
+                            "{:<15} {:<30} {:<15} {}",
                             ms.id,
                             ms.setting_type,
                             ms.color,
@@ -112,20 +122,25 @@ async fn list_marker_settings(client: &HoneycombClient, dataset: &str, format: &
             }
         }
     }
-    
+
     Ok(())
 }
 
-async fn create_marker_setting(client: &HoneycombClient, dataset: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn create_marker_setting(
+    client: &HoneycombClient,
+    dataset: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/1/marker_settings/{}", dataset);
     let response = client.post(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -134,20 +149,26 @@ async fn create_marker_setting(client: &HoneycombClient, dataset: &str, data: &s
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
-async fn update_marker_setting(client: &HoneycombClient, dataset: &str, id: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn update_marker_setting(
+    client: &HoneycombClient,
+    dataset: &str,
+    id: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/1/marker_settings/{}/{}", dataset, id);
     let response = client.put(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -156,15 +177,18 @@ async fn update_marker_setting(client: &HoneycombClient, dataset: &str, id: &str
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
 async fn delete_marker_setting(client: &HoneycombClient, dataset: &str, id: &str) -> Result<()> {
     let path = format!("/1/marker_settings/{}/{}", dataset, id);
     client.delete(&path).await?;
-    
-    println!("Marker setting '{}' in dataset '{}' deleted successfully", id, dataset);
-    
+
+    println!(
+        "Marker setting '{}' in dataset '{}' deleted successfully",
+        id, dataset
+    );
+
     Ok(())
 }

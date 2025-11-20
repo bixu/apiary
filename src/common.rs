@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use crate::client::HoneycombClient;
 use anyhow::Result;
 use serde_json::Value;
+use std::collections::HashMap;
 
 // Common utility functions
 pub fn read_json_file(path: &str) -> anyhow::Result<serde_json::Value> {
@@ -11,10 +11,14 @@ pub fn read_json_file(path: &str) -> anyhow::Result<serde_json::Value> {
 }
 
 // Environment validation function
-pub async fn validate_environment(client: &HoneycombClient, team: &str, environment: &str) -> Result<bool> {
+pub async fn validate_environment(
+    client: &HoneycombClient,
+    team: &str,
+    environment: &str,
+) -> Result<bool> {
     let path = format!("/2/teams/{}/environments", team);
     let response = client.get(&path, None).await?;
-    
+
     if let Value::Object(obj) = response {
         if let Some(Value::Array(envs)) = obj.get("data") {
             for env in envs {
@@ -35,12 +39,16 @@ pub async fn validate_environment(client: &HoneycombClient, team: &str, environm
             }
         }
     }
-    
+
     Ok(false)
 }
 
 // Validate and throw error if environment doesn't exist
-pub async fn require_valid_environment(client: &HoneycombClient, team: &str, environment: &str) -> Result<()> {
+pub async fn require_valid_environment(
+    client: &HoneycombClient,
+    team: &str,
+    environment: &str,
+) -> Result<()> {
     if !validate_environment(client, team, environment).await? {
         anyhow::bail!(
             "Environment '{}' not found in team '{}'. Use 'apiary environments list --team {}' to see available environments.",
@@ -88,19 +96,19 @@ pub struct PaginationParams {
 impl PaginationParams {
     pub fn to_query_params(&self) -> HashMap<String, String> {
         let mut params = HashMap::new();
-        
+
         if let Some(limit) = self.limit {
             params.insert("limit".to_string(), limit.to_string());
         }
-        
+
         if let Some(offset) = self.offset {
             params.insert("offset".to_string(), offset.to_string());
         }
-        
+
         if let Some(order) = &self.order {
             params.insert("order".to_string(), order.clone());
         }
-        
+
         params
     }
 }

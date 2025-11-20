@@ -14,7 +14,12 @@ pub struct HoneycombClient {
 }
 
 impl HoneycombClient {
-    pub fn new(management_key: Option<String>, config_key: Option<String>, base_url: Option<String>, team_slug: Option<String>) -> Self {
+    pub fn new(
+        management_key: Option<String>,
+        config_key: Option<String>,
+        base_url: Option<String>,
+        team_slug: Option<String>,
+    ) -> Self {
         Self {
             client: Client::new(),
             management_key,
@@ -23,7 +28,7 @@ impl HoneycombClient {
             team_slug,
         }
     }
-    
+
     /// Get the appropriate API key for debugging/info purposes
     pub fn get_key_for_endpoint(&self, path: &str) -> Option<&str> {
         if self.is_v2_endpoint(path) {
@@ -41,9 +46,9 @@ impl HoneycombClient {
         body: Option<&Value>,
     ) -> Result<Response> {
         let url = format!("{}{}", self.base_url, path);
-        
+
         let mut request = self.client.request(method, &url);
-        
+
         // Use appropriate authentication based on endpoint
         if self.is_v2_endpoint(path) {
             // v2 endpoints use Management Key with Bearer token
@@ -68,28 +73,32 @@ impl HoneycombClient {
                 ));
             }
         }
-        
+
         request = request.header("Content-Type", "application/json");
-        
+
         // Add query parameters
         if let Some(params) = query_params {
             for (key, value) in params {
                 request = request.query(&[(key, value)]);
             }
         }
-        
+
         // Add body for POST/PUT/PATCH requests
         if let Some(body) = body {
             request = request.json(body);
         }
-        
+
         request
             .send()
             .await
             .with_context(|| format!("Failed to send request to {}", url))
     }
 
-    pub async fn get(&self, path: &str, query_params: Option<&HashMap<String, String>>) -> Result<Value> {
+    pub async fn get(
+        &self,
+        path: &str,
+        query_params: Option<&HashMap<String, String>>,
+    ) -> Result<Value> {
         let response = self.request(Method::GET, path, query_params, None).await?;
         self.handle_response(response).await
     }
@@ -123,7 +132,7 @@ impl HoneycombClient {
     async fn handle_response(&self, response: Response) -> Result<Value> {
         let status = response.status();
         let text = response.text().await?;
-        
+
         if status.is_success() {
             if text.is_empty() {
                 Ok(Value::Null)
@@ -139,22 +148,22 @@ impl HoneycombClient {
     pub fn team_slug(&self) -> Option<&str> {
         self.team_slug.as_deref()
     }
-    
+
     /// Check if an endpoint is a v2 endpoint (uses Management Key)
     pub fn is_v2_endpoint(&self, path: &str) -> bool {
         path.starts_with("/2/")
     }
-    
+
     /// Check if we have a valid Management Key
     pub fn has_management_key(&self) -> bool {
         self.management_key.is_some()
     }
-    
+
     /// Check if we have a valid Configuration Key  
     pub fn has_config_key(&self) -> bool {
         self.config_key.is_some()
     }
-    
+
     /// Get key type for an endpoint (for error messages)
     pub fn get_key_type_for_endpoint(&self, path: &str) -> &'static str {
         if self.is_v2_endpoint(path) {

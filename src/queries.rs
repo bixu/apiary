@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{OutputFormat, pretty_print_json, read_json_file};
+use crate::common::{pretty_print_json, read_json_file, OutputFormat};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
@@ -125,29 +125,42 @@ pub struct Order {
 impl QueryCommands {
     pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
         match self {
-            QueryCommands::Create { dataset, data, format } => {
-                create_query(client, dataset, data, format).await
-            }
-            QueryCommands::Get { dataset, id, format } => {
-                get_query(client, dataset, id, format).await
-            }
-            QueryCommands::Run { dataset, data, format, wait, timeout } => {
-                run_query(client, dataset, data, format, *wait, *timeout).await
-            }
+            QueryCommands::Create {
+                dataset,
+                data,
+                format,
+            } => create_query(client, dataset, data, format).await,
+            QueryCommands::Get {
+                dataset,
+                id,
+                format,
+            } => get_query(client, dataset, id, format).await,
+            QueryCommands::Run {
+                dataset,
+                data,
+                format,
+                wait,
+                timeout,
+            } => run_query(client, dataset, data, format, *wait, *timeout).await,
         }
     }
 }
 
-async fn create_query(client: &HoneycombClient, dataset: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn create_query(
+    client: &HoneycombClient,
+    dataset: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/1/queries/{}", dataset);
     let response = client.post(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -156,14 +169,19 @@ async fn create_query(client: &HoneycombClient, dataset: &str, data: &str, forma
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
-async fn get_query(client: &HoneycombClient, dataset: &str, id: &str, format: &OutputFormat) -> Result<()> {
+async fn get_query(
+    client: &HoneycombClient,
+    dataset: &str,
+    id: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let path = format!("/1/queries/{}/{}", dataset, id);
     let response = client.get(&path, None).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -172,54 +190,66 @@ async fn get_query(client: &HoneycombClient, dataset: &str, id: &str, format: &O
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
-async fn run_query(client: &HoneycombClient, dataset: &str, data: &str, format: &OutputFormat, wait: bool, timeout: u64) -> Result<()> {
+async fn run_query(
+    client: &HoneycombClient,
+    dataset: &str,
+    data: &str,
+    format: &OutputFormat,
+    wait: bool,
+    timeout: u64,
+) -> Result<()> {
     // Step 1: Create the query
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let query_path = format!("/1/queries/{}", dataset);
     let query_response = client.post(&query_path, &json_data).await?;
-    
-    let query_id = query_response.get("id")
+
+    let query_id = query_response
+        .get("id")
         .and_then(|id| id.as_str())
         .ok_or_else(|| anyhow::anyhow!("Failed to get query ID from response"))?;
-    
+
     // Step 2: Create query result
     let result_path = format!("/1/query_results/{}", dataset);
     let result_data = serde_json::json!({
         "query_id": query_id
     });
-    
+
     let result_response = client.post(&result_path, &result_data).await?;
-    
-    let result_id = result_response.get("query_result_id")
+
+    let result_id = result_response
+        .get("query_result_id")
         .and_then(|id| id.as_str())
         .ok_or_else(|| anyhow::anyhow!("Failed to get query result ID from response"))?;
-    
+
     if !wait {
         println!("Query result ID: {}", result_id);
-        println!("Use 'apiary query-results get --dataset {} --id {}' to check status", dataset, result_id);
+        println!(
+            "Use 'apiary query-results get --dataset {} --id {}' to check status",
+            dataset, result_id
+        );
         return Ok(());
     }
-    
+
     // Step 3: Poll for results
     let poll_path = format!("/1/query_results/{}/{}", dataset, result_id);
     let mut elapsed = 0;
-    
+
     loop {
         if elapsed >= timeout {
             anyhow::bail!("Query timed out after {} seconds", timeout);
         }
-        
+
         let poll_response = client.get(&poll_path, None).await?;
-        
+
         if let Some(complete) = poll_response.get("complete").and_then(|c| c.as_bool()) {
             if complete {
                 match format {
@@ -233,7 +263,7 @@ async fn run_query(client: &HoneycombClient, dataset: &str, data: &str, format: 
                 return Ok(());
             }
         }
-        
+
         tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         elapsed += 1;
     }

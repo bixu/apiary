@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{OutputFormat, pretty_print_json, read_json_file};
+use crate::common::{pretty_print_json, read_json_file, OutputFormat};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
@@ -85,15 +85,22 @@ impl BurnAlertCommands {
             BurnAlertCommands::List { dataset, format } => {
                 list_burn_alerts(client, dataset, format).await
             }
-            BurnAlertCommands::Get { dataset, id, format } => {
-                get_burn_alert(client, dataset, id, format).await
-            }
-            BurnAlertCommands::Create { dataset, data, format } => {
-                create_burn_alert(client, dataset, data, format).await
-            }
-            BurnAlertCommands::Update { dataset, id, data, format } => {
-                update_burn_alert(client, dataset, id, data, format).await
-            }
+            BurnAlertCommands::Get {
+                dataset,
+                id,
+                format,
+            } => get_burn_alert(client, dataset, id, format).await,
+            BurnAlertCommands::Create {
+                dataset,
+                data,
+                format,
+            } => create_burn_alert(client, dataset, data, format).await,
+            BurnAlertCommands::Update {
+                dataset,
+                id,
+                data,
+                format,
+            } => update_burn_alert(client, dataset, id, data, format).await,
             BurnAlertCommands::Delete { dataset, id } => {
                 delete_burn_alert(client, dataset, id).await
             }
@@ -101,10 +108,14 @@ impl BurnAlertCommands {
     }
 }
 
-async fn list_burn_alerts(client: &HoneycombClient, dataset: &str, format: &OutputFormat) -> Result<()> {
+async fn list_burn_alerts(
+    client: &HoneycombClient,
+    dataset: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let path = format!("/1/burn_alerts/{}", dataset);
     let response = client.get(&path, None).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -114,12 +125,16 @@ async fn list_burn_alerts(client: &HoneycombClient, dataset: &str, format: &Outp
         }
         OutputFormat::Table => {
             if let Value::Array(burn_alerts) = response {
-                println!("{:<15} {:<15} {:<15} {:<15} {:<10} {}", "ID", "SLO ID", "Exhaustion", "Window", "Disabled", "Recipients");
+                println!(
+                    "{:<15} {:<15} {:<15} {:<15} {:<10} {}",
+                    "ID", "SLO ID", "Exhaustion", "Window", "Disabled", "Recipients"
+                );
                 println!("{:-<85}", "");
-                
+
                 for burn_alert in burn_alerts {
                     if let Ok(ba) = serde_json::from_value::<BurnAlert>(burn_alert) {
-                        println!("{:<15} {:<15} {:<15} {:<15} {:<10} {}", 
+                        println!(
+                            "{:<15} {:<15} {:<15} {:<15} {:<10} {}",
                             ba.id,
                             ba.slo_id,
                             format!("{}m", ba.exhaustion_minutes),
@@ -132,14 +147,19 @@ async fn list_burn_alerts(client: &HoneycombClient, dataset: &str, format: &Outp
             }
         }
     }
-    
+
     Ok(())
 }
 
-async fn get_burn_alert(client: &HoneycombClient, dataset: &str, id: &str, format: &OutputFormat) -> Result<()> {
+async fn get_burn_alert(
+    client: &HoneycombClient,
+    dataset: &str,
+    id: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let path = format!("/1/burn_alerts/{}/{}", dataset, id);
     let response = client.get(&path, None).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -148,20 +168,25 @@ async fn get_burn_alert(client: &HoneycombClient, dataset: &str, id: &str, forma
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
-async fn create_burn_alert(client: &HoneycombClient, dataset: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn create_burn_alert(
+    client: &HoneycombClient,
+    dataset: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/1/burn_alerts/{}", dataset);
     let response = client.post(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -170,20 +195,26 @@ async fn create_burn_alert(client: &HoneycombClient, dataset: &str, data: &str, 
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
-async fn update_burn_alert(client: &HoneycombClient, dataset: &str, id: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn update_burn_alert(
+    client: &HoneycombClient,
+    dataset: &str,
+    id: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/1/burn_alerts/{}/{}", dataset, id);
     let response = client.put(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -192,15 +223,18 @@ async fn update_burn_alert(client: &HoneycombClient, dataset: &str, id: &str, da
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
 async fn delete_burn_alert(client: &HoneycombClient, dataset: &str, id: &str) -> Result<()> {
     let path = format!("/1/burn_alerts/{}/{}", dataset, id);
     client.delete(&path).await?;
-    
-    println!("Burn Alert '{}' in dataset '{}' deleted successfully", id, dataset);
-    
+
+    println!(
+        "Burn Alert '{}' in dataset '{}' deleted successfully",
+        id, dataset
+    );
+
     Ok(())
 }

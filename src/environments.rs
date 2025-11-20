@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{OutputFormat, pretty_print_json, read_json_file};
+use crate::common::{pretty_print_json, read_json_file, OutputFormat};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
@@ -125,20 +125,25 @@ impl EnvironmentCommands {
             EnvironmentCommands::Create { team, data, format } => {
                 create_environment(client, team, data, format).await
             }
-            EnvironmentCommands::Update { team, id, data, format } => {
-                update_environment(client, team, id, data, format).await
-            }
-            EnvironmentCommands::Delete { team, id } => {
-                delete_environment(client, team, id).await
-            }
+            EnvironmentCommands::Update {
+                team,
+                id,
+                data,
+                format,
+            } => update_environment(client, team, id, data, format).await,
+            EnvironmentCommands::Delete { team, id } => delete_environment(client, team, id).await,
         }
     }
 }
 
-async fn list_environments(client: &HoneycombClient, team: &str, format: &OutputFormat) -> Result<()> {
+async fn list_environments(
+    client: &HoneycombClient,
+    team: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let path = format!("/2/teams/{}/environments", team);
     let response = client.get(&path, None).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -147,13 +152,22 @@ async fn list_environments(client: &HoneycombClient, team: &str, format: &Output
             println!("{}", pretty_print_json(&response)?);
         }
         OutputFormat::Table => {
-            if let Ok(env_response) = serde_json::from_value::<EnvironmentsResponse>(response.clone()) {
-                println!("{:<35} {:<15} {:<25} {:<12} {}", "ID", "Name", "Slug", "Color", "Created");
+            if let Ok(env_response) =
+                serde_json::from_value::<EnvironmentsResponse>(response.clone())
+            {
+                println!(
+                    "{:<35} {:<15} {:<25} {:<12} {}",
+                    "ID", "Name", "Slug", "Color", "Created"
+                );
                 println!("{:-<95}", "");
-                
+
                 for env_data in env_response.data {
-                    let color = env_data.attributes.color.unwrap_or_else(|| "N/A".to_string());
-                    println!("{:<35} {:<15} {:<25} {:<12} {}", 
+                    let color = env_data
+                        .attributes
+                        .color
+                        .unwrap_or_else(|| "N/A".to_string());
+                    println!(
+                        "{:<35} {:<15} {:<25} {:<12} {}",
                         env_data.id,
                         env_data.attributes.name,
                         env_data.attributes.slug,
@@ -166,14 +180,19 @@ async fn list_environments(client: &HoneycombClient, team: &str, format: &Output
             }
         }
     }
-    
+
     Ok(())
 }
 
-async fn get_environment(client: &HoneycombClient, team: &str, id: &str, format: &OutputFormat) -> Result<()> {
+async fn get_environment(
+    client: &HoneycombClient,
+    team: &str,
+    id: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let path = format!("/2/teams/{}/environments/{}", team, id);
     let response = client.get(&path, None).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -182,20 +201,25 @@ async fn get_environment(client: &HoneycombClient, team: &str, id: &str, format:
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
-async fn create_environment(client: &HoneycombClient, team: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn create_environment(
+    client: &HoneycombClient,
+    team: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/2/teams/{}/environments", team);
     let response = client.post(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -204,20 +228,26 @@ async fn create_environment(client: &HoneycombClient, team: &str, data: &str, fo
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
-async fn update_environment(client: &HoneycombClient, team: &str, id: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn update_environment(
+    client: &HoneycombClient,
+    team: &str,
+    id: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/2/teams/{}/environments/{}", team, id);
     let response = client.patch(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -226,15 +256,18 @@ async fn update_environment(client: &HoneycombClient, team: &str, id: &str, data
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
 async fn delete_environment(client: &HoneycombClient, team: &str, id: &str) -> Result<()> {
     let path = format!("/2/teams/{}/environments/{}", team, id);
     client.delete(&path).await?;
-    
-    println!("Environment '{}' in team '{}' deleted successfully", id, team);
-    
+
+    println!(
+        "Environment '{}' in team '{}' deleted successfully",
+        id, team
+    );
+
     Ok(())
 }

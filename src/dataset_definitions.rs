@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{OutputFormat, pretty_print_json, read_json_file};
+use crate::common::{pretty_print_json, read_json_file, OutputFormat};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
@@ -51,17 +51,23 @@ impl DatasetDefinitionCommands {
             DatasetDefinitionCommands::Get { dataset, format } => {
                 get_dataset_definitions(client, dataset, format).await
             }
-            DatasetDefinitionCommands::Update { dataset, data, format } => {
-                update_dataset_definitions(client, dataset, data, format).await
-            }
+            DatasetDefinitionCommands::Update {
+                dataset,
+                data,
+                format,
+            } => update_dataset_definitions(client, dataset, data, format).await,
         }
     }
 }
 
-async fn get_dataset_definitions(client: &HoneycombClient, dataset: &str, format: &OutputFormat) -> Result<()> {
+async fn get_dataset_definitions(
+    client: &HoneycombClient,
+    dataset: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let path = format!("/1/dataset_definitions/{}", dataset);
     let response = client.get(&path, None).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -70,20 +76,25 @@ async fn get_dataset_definitions(client: &HoneycombClient, dataset: &str, format
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
-async fn update_dataset_definitions(client: &HoneycombClient, dataset: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn update_dataset_definitions(
+    client: &HoneycombClient,
+    dataset: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/1/dataset_definitions/{}", dataset);
     let response = client.patch(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -92,6 +103,6 @@ async fn update_dataset_definitions(client: &HoneycombClient, dataset: &str, dat
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }

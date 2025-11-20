@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{OutputFormat, pretty_print_json, read_json_file};
+use crate::common::{pretty_print_json, read_json_file, OutputFormat};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
@@ -81,29 +81,36 @@ pub struct Column {
 impl ColumnCommands {
     pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
         match self {
-            ColumnCommands::List { dataset, format } => {
-                list_columns(client, dataset, format).await
-            }
-            ColumnCommands::Get { dataset, id, format } => {
-                get_column(client, dataset, id, format).await
-            }
-            ColumnCommands::Create { dataset, data, format } => {
-                create_column(client, dataset, data, format).await
-            }
-            ColumnCommands::Update { dataset, id, data, format } => {
-                update_column(client, dataset, id, data, format).await
-            }
-            ColumnCommands::Delete { dataset, id } => {
-                delete_column(client, dataset, id).await
-            }
+            ColumnCommands::List { dataset, format } => list_columns(client, dataset, format).await,
+            ColumnCommands::Get {
+                dataset,
+                id,
+                format,
+            } => get_column(client, dataset, id, format).await,
+            ColumnCommands::Create {
+                dataset,
+                data,
+                format,
+            } => create_column(client, dataset, data, format).await,
+            ColumnCommands::Update {
+                dataset,
+                id,
+                data,
+                format,
+            } => update_column(client, dataset, id, data, format).await,
+            ColumnCommands::Delete { dataset, id } => delete_column(client, dataset, id).await,
         }
     }
 }
 
-async fn list_columns(client: &HoneycombClient, dataset: &str, format: &OutputFormat) -> Result<()> {
+async fn list_columns(
+    client: &HoneycombClient,
+    dataset: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let path = format!("/1/columns/{}", dataset);
     let response = client.get(&path, None).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -113,13 +120,17 @@ async fn list_columns(client: &HoneycombClient, dataset: &str, format: &OutputFo
         }
         OutputFormat::Table => {
             if let Value::Array(columns) = response {
-                println!("{:<15} {:<30} {:<10} {:<20} {}", "ID", "Key Name", "Hidden", "Type", "Created");
+                println!(
+                    "{:<15} {:<30} {:<10} {:<20} {}",
+                    "ID", "Key Name", "Hidden", "Type", "Created"
+                );
                 println!("{:-<85}", "");
-                
+
                 for column in columns {
                     if let Ok(col) = serde_json::from_value::<Column>(column) {
                         let col_type = col.column_type.unwrap_or_else(|| "unknown".to_string());
-                        println!("{:<15} {:<30} {:<10} {:<20} {}", 
+                        println!(
+                            "{:<15} {:<30} {:<10} {:<20} {}",
                             col.id,
                             col.key_name,
                             col.hidden,
@@ -131,14 +142,19 @@ async fn list_columns(client: &HoneycombClient, dataset: &str, format: &OutputFo
             }
         }
     }
-    
+
     Ok(())
 }
 
-async fn get_column(client: &HoneycombClient, dataset: &str, id: &str, format: &OutputFormat) -> Result<()> {
+async fn get_column(
+    client: &HoneycombClient,
+    dataset: &str,
+    id: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let path = format!("/1/columns/{}/{}", dataset, id);
     let response = client.get(&path, None).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -147,20 +163,25 @@ async fn get_column(client: &HoneycombClient, dataset: &str, id: &str, format: &
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
-async fn create_column(client: &HoneycombClient, dataset: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn create_column(
+    client: &HoneycombClient,
+    dataset: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/1/columns/{}", dataset);
     let response = client.post(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -169,20 +190,26 @@ async fn create_column(client: &HoneycombClient, dataset: &str, data: &str, form
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
-async fn update_column(client: &HoneycombClient, dataset: &str, id: &str, data: &str, format: &OutputFormat) -> Result<()> {
+async fn update_column(
+    client: &HoneycombClient,
+    dataset: &str,
+    id: &str,
+    data: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
-    
+
     let path = format!("/1/columns/{}/{}", dataset, id);
     let response = client.put(&path, &json_data).await?;
-    
+
     match format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string(&response)?);
@@ -191,15 +218,18 @@ async fn update_column(client: &HoneycombClient, dataset: &str, id: &str, data: 
             println!("{}", pretty_print_json(&response)?);
         }
     }
-    
+
     Ok(())
 }
 
 async fn delete_column(client: &HoneycombClient, dataset: &str, id: &str) -> Result<()> {
     let path = format!("/1/columns/{}/{}", dataset, id);
     client.delete(&path).await?;
-    
-    println!("Column '{}' in dataset '{}' deleted successfully", id, dataset);
-    
+
+    println!(
+        "Column '{}' in dataset '{}' deleted successfully",
+        id, dataset
+    );
+
     Ok(())
 }
