@@ -80,7 +80,7 @@ jobs:
   trigger-homebrew-update:
     needs: apiary
     runs-on: ubuntu-latest
-    if: github.event.action == 'published'
+    if: github.event.action == 'created'
     steps:
       - name: Trigger Homebrew tap update
         env:
