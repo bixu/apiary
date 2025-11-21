@@ -18,39 +18,6 @@ This CLI requires a **Management API Key** from Honeycomb. Management Keys provi
    export HONEYCOMB_API_KEY="hcxmk_your_management_key_here"
    ```
 
-## Features
-
-- **Management Key Authentication**: Modern Bearer token authentication
-- **Multiple Output Formats**: JSON, pretty-printed JSON, and table formats
-- **Environment Variables**: Support for API keys and configuration via environment variables
-- **Comprehensive Management**: Full access to all Honeycomb resources
-
-## Supported Resources
-
-### Core Resources
-- **Datasets** - Dataset management and configuration
-- **Columns** - Column schema management
-- **Events** - Event ingestion (single and batch)
-- **Queries** - Query creation, execution, and result retrieval
-
-### Observability & Alerting
-- **Triggers** - Alert trigger management
-- **Recipients** - Notification recipient configuration
-- **SLOs** - Service Level Objective management
-- **Burn Alerts** - SLO budget burn alerting
-- **Markers** - Timeline markers for deployments and incidents
-
-### Organization & Collaboration
-- **Boards** - Dashboard and board management
-- **Environments** - Environment configuration (v2 API)
-- **Keys** - API key management (v2 API)
-- **Auth** - Authentication validation and permissions
-
-### Advanced Features
-- **Service Maps** - Service dependency visualization
-- **Reporting** - Historical data and reporting
-- **Query Annotations** - Query metadata and collaboration
-
 ## Installation
 
 ### From Source
