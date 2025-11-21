@@ -1,5 +1,6 @@
 use crate::client::HoneycombClient;
-use crate::common::{pretty_print_json, read_json_file, OutputFormat};
+use crate::common::{pretty_print_json, read_json_file, OutputFormat, DEFAULT_TABLE_FORMAT, DEFAULT_PRETTY_FORMAT};
+use crate::errors;
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
@@ -13,7 +14,7 @@ pub enum ApiKeyCommands {
         #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
         /// Output format
-        #[arg(short, long, default_value = "table")]
+        #[arg(short, long, default_value = DEFAULT_TABLE_FORMAT)]
         format: OutputFormat,
     },
     /// Get a specific API key
@@ -21,11 +22,11 @@ pub enum ApiKeyCommands {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
         #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
-        /// API Key ID
+        /// API key ID
         #[arg(short, long)]
         id: String,
         /// Output format
-        #[arg(short, long, default_value = "pretty")]
+        #[arg(short, long, default_value = DEFAULT_PRETTY_FORMAT)]
         format: OutputFormat,
     },
     /// Create a new API key
@@ -37,7 +38,7 @@ pub enum ApiKeyCommands {
         #[arg(long)]
         data: String,
         /// Output format
-        #[arg(short, long, default_value = "pretty")]
+        #[arg(short, long, default_value = DEFAULT_PRETTY_FORMAT)]
         format: OutputFormat,
     },
     /// Update an API key
@@ -52,7 +53,7 @@ pub enum ApiKeyCommands {
         #[arg(long)]
         data: String,
         /// Output format
-        #[arg(short, long, default_value = "pretty")]
+        #[arg(short, long, default_value = DEFAULT_PRETTY_FORMAT)]
         format: OutputFormat,
     },
     /// Delete an API key
@@ -107,7 +108,7 @@ impl ApiKeyCommands {
         match self {
             ApiKeyCommands::List { team, format } => {
                 let effective_team = team.as_ref().or(global_team.as_ref())
-                    .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
+                    .ok_or_else(|| anyhow::anyhow!(errors::messages::TEAM_REQUIRED))?;
                 list_api_keys(client, effective_team, format).await
             }
             ApiKeyCommands::Get { team, id, format } => {

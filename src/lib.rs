@@ -6,6 +6,7 @@ pub mod calculated_fields;
 pub mod client;
 pub mod columns;
 pub mod common;
+pub mod errors;
 pub mod dataset_definitions;
 pub mod datasets;
 pub mod environments;

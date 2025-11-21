@@ -1,7 +1,10 @@
 //! Comprehensive test coverage for all Honeycomb API resources
 //! This file tests all API endpoints referenced by the tool
 
+mod test_utils;
+
 use apiary::client::HoneycombClient;
+use test_utils::*;
 use serde_json::json;
 use wiremock::{
     matchers::{method, path},
@@ -14,33 +17,15 @@ mod api_keys {
 
     #[tokio::test]
     async fn test_list_api_keys() {
-        let mock_server = MockServer::start().await;
+        let mock_server = create_mock_server().await;
+        
+        mock_successful_list(
+            &mock_server,
+            "/2/teams/test-team/api_keys",
+            sample_api_key_data()
+        ).await;
 
-        Mock::given(method("GET"))
-            .and(path("/2/teams/test-team/api_keys"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "data": [
-                    {
-                        "id": "key-123",
-                        "type": "api_key",
-                        "attributes": {
-                            "name": "Test Key",
-                            "key_type": "management",
-                            "disabled": false,
-                            "environment_id": "env-456"
-                        }
-                    }
-                ]
-            })))
-            .mount(&mock_server)
-            .await;
-
-        let client = HoneycombClient::new(
-            Some("test-mgmt-key".to_string()),
-            None,
-            Some(mock_server.uri()),
-        );
-
+        let client = create_test_client(mock_server.uri());
         let response = client.get("/2/teams/test-team/api_keys", None).await;
         assert!(response.is_ok());
     }

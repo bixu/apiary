@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{pretty_print_json, read_json_file, OutputFormat};
+use crate::common::{pretty_print_json, read_json_file, OutputFormat, DEFAULT_PRETTY_FORMAT};
 use anyhow::Result;
 use clap::Subcommand;
 
@@ -17,7 +17,7 @@ pub enum DatasetDefinitionCommands {
         #[arg(short, long, env = "HONEYCOMB_ENVIRONMENT")]
         environment: Option<String>,
         /// Output format
-        #[arg(short, long, default_value = "pretty")]
+        #[arg(short, long, default_value = DEFAULT_PRETTY_FORMAT)]
         format: OutputFormat,
     },
     /// Update dataset definitions
@@ -35,7 +35,7 @@ pub enum DatasetDefinitionCommands {
         #[arg(long)]
         data: String,
         /// Output format
-        #[arg(short, long, default_value = "pretty")]
+        #[arg(short, long, default_value = DEFAULT_PRETTY_FORMAT)]
         format: OutputFormat,
     },
 }

@@ -9,6 +9,7 @@ mod common;
 mod dataset_definitions;
 mod datasets;
 mod environments;
+mod errors;
 mod marker_settings;
 mod markers;
 
@@ -216,9 +217,15 @@ async fn main() -> Result<()> {
     }
 
     let client = HoneycombClient::new(management_key, config_key, api_url);
+    
+    let context = common::CommandContext {
+        team: cli.team,
+        global_format: cli.format,
+        verbose: cli.verbose,
+    };
 
     match cli.command {
-        Some(command) => execute_command(&client, command, &cli.team).await,
+        Some(command) => execute_command(&client, command, &context).await,
         None => {
             display_resource_usage();
             Ok(())
@@ -291,11 +298,11 @@ fn display_resource_usage() {
 async fn execute_command(
     client: &HoneycombClient,
     command: Commands,
-    team: &Option<String>,
+    context: &common::CommandContext,
 ) -> Result<()> {
     match command {
         Commands::Auth { command } => command.execute(client).await,
-        Commands::Datasets { command } => command.execute(client, team).await,
+        Commands::Datasets { command } => command.execute(client, &context.team).await,
         Commands::Columns { command } => command.execute(client).await,
         Commands::Triggers { command } => command.execute(client).await,
         Commands::Boards { command } => command.execute(client).await,
@@ -303,10 +310,10 @@ async fn execute_command(
         Commands::Recipients { command } => command.execute(client).await,
         Commands::Slos { command } => command.execute(client).await,
         Commands::BurnAlerts { command } => command.execute(client).await,
-        Commands::Environments { command } => command.execute(client, team).await,
-        Commands::ApiKeys { command } => command.execute(client, team).await,
+        Commands::Environments { command } => command.execute(client, &context.team).await,
+        Commands::ApiKeys { command } => command.execute(client, &context.team).await,
         Commands::CalculatedFields { command } => command.execute(client).await,
-        Commands::DatasetDefinitions { command } => command.execute(client, team.as_deref()).await,
+        Commands::DatasetDefinitions { command } => command.execute(client, context.team.as_deref()).await,
         Commands::MarkerSettings { command } => command.execute(client).await,
     }
 }

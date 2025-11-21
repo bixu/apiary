@@ -1,6 +1,21 @@
 use crate::client::HoneycombClient;
+use crate::errors;
 use anyhow::Result;
 use serde_json::Value;
+
+// Constants for consistency
+pub const DEFAULT_TABLE_FORMAT: &str = "table";
+pub const DEFAULT_PRETTY_FORMAT: &str = "pretty";
+pub const HONEYCOMB_TEAM_ENV: &str = "HONEYCOMB_TEAM";
+pub const HONEYCOMB_ENVIRONMENT_ENV: &str = "HONEYCOMB_ENVIRONMENT";
+
+// Context for command execution
+#[derive(Debug, Clone)]
+pub struct CommandContext {
+    pub team: Option<String>,
+    pub global_format: Option<OutputFormat>,
+    pub verbose: bool,
+}
 
 // Common utility functions
 pub fn read_json_file(path: &str) -> anyhow::Result<serde_json::Value> {
@@ -50,10 +65,8 @@ pub async fn require_valid_environment(
 ) -> Result<()> {
     if !validate_environment(client, team, environment).await? {
         anyhow::bail!(
-            "Environment '{}' not found in team '{}'. Use 'apiary environments list --team {}' to see available environments.",
-            environment,
-            team,
-            team
+            "{}",
+            errors::messages::environment_not_found(environment, team)
         );
     }
     Ok(())
@@ -64,7 +77,7 @@ pub fn pretty_print_json(value: &serde_json::Value) -> anyhow::Result<String> {
 }
 
 // Common CLI output formats
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, clap::ValueEnum)]
 pub enum OutputFormat {
     Json,
     Pretty,
@@ -82,4 +95,43 @@ impl std::str::FromStr for OutputFormat {
             _ => anyhow::bail!("Invalid output format. Use: json, pretty, or table"),
         }
     }
+}
+
+// Macro for standard team parameter
+#[macro_export]
+macro_rules! team_param {
+    () => {
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
+        #[arg(short, long, env = $crate::common::HONEYCOMB_TEAM_ENV)]
+        team: Option<String>,
+    };
+}
+
+// Macro for standard environment parameter
+#[macro_export] 
+macro_rules! environment_param {
+    () => {
+        /// Environment slug (uses HONEYCOMB_ENVIRONMENT env var if not specified)
+        #[arg(short, long, env = $crate::common::HONEYCOMB_ENVIRONMENT_ENV)]
+        environment: Option<String>,
+    };
+}
+
+// Macro for standard format parameter
+#[macro_export]
+macro_rules! format_param {
+    ($default:expr) => {
+        /// Output format
+        #[arg(short, long, default_value = $default)]
+        format: OutputFormat,
+    };
+}
+
+// Helper function to resolve team parameter
+pub fn resolve_team(local_team: &Option<String>, context: &CommandContext) -> Result<String> {
+    local_team
+        .as_ref()
+        .or(context.team.as_ref())
+        .cloned()
+        .ok_or_else(|| anyhow::anyhow!(errors::messages::TEAM_REQUIRED))
 }

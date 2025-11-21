@@ -1,3 +1,4 @@
+use crate::errors;
 use anyhow::{Context, Result};
 use reqwest::{Client, Method, Response};
 use serde_json::Value;
@@ -52,8 +53,8 @@ impl HoneycombClient {
                 request = request.header("Authorization", format!("Bearer {}", management_key));
             } else {
                 return Err(anyhow::anyhow!(
-                    "v2 endpoint '{}' requires a Management Key.\n\
-                     Set HONEYCOMB_MANAGEMENT_API_KEY_ID and HONEYCOMB_MANAGEMENT_API_KEY environment variables.",
+                    "{} Endpoint: '{}'",
+                    errors::messages::MANAGEMENT_KEY_REQUIRED,
                     path
                 ));
             }
@@ -63,8 +64,8 @@ impl HoneycombClient {
                 request = request.header("X-Honeycomb-Team", config_key);
             } else {
                 return Err(anyhow::anyhow!(
-                    "v1 endpoint '{}' requires a Configuration Key.\n\
-                     Set HONEYCOMB_CONFIGURATION_API_KEY environment variable.",
+                    "{} Endpoint: '{}'",
+                    errors::messages::CONFIG_KEY_REQUIRED,
                     path
                 ));
             }

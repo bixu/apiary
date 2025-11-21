@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::OutputFormat;
+use crate::common::{OutputFormat, DEFAULT_PRETTY_FORMAT};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
@@ -9,7 +9,7 @@ pub enum AuthCommands {
     /// Validate an API key and get authentication information
     Validate {
         /// Output format
-        #[arg(short, long, default_value = "pretty")]
+        #[arg(short, long, default_value = DEFAULT_PRETTY_FORMAT)]
         format: OutputFormat,
     },
     /// Show information about the current API key type and requirements
