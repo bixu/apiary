@@ -82,7 +82,7 @@ impl DatasetCommands {
             } => {
                 let effective_team = team.as_ref().or(global_team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
-                
+
                 // Environment is now optional - if not provided, list all datasets
                 list_datasets(client, effective_team, environment.as_deref(), format).await
             }
@@ -118,14 +118,16 @@ async fn list_datasets(
         query_params.insert("environment".to_string(), env.to_string());
     }
 
-    let response = client.get(
-        "/1/datasets",
-        if query_params.is_empty() {
-            None
-        } else {
-            Some(&query_params)
-        },
-    ).await?;
+    let response = client
+        .get(
+            "/1/datasets",
+            if query_params.is_empty() {
+                None
+            } else {
+                Some(&query_params)
+            },
+        )
+        .await?;
 
     match format {
         OutputFormat::Json => {

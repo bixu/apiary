@@ -43,9 +43,15 @@ pub enum DatasetDefinitionCommands {
 impl DatasetDefinitionCommands {
     pub async fn execute(&self, client: &HoneycombClient, global_team: Option<&str>) -> Result<()> {
         match self {
-            DatasetDefinitionCommands::Get { dataset, team, environment, format } => {
+            DatasetDefinitionCommands::Get {
+                dataset,
+                team,
+                environment,
+                format,
+            } => {
                 let team_str = global_team.or(team.as_deref()).unwrap_or("default");
-                get_dataset_definitions(client, dataset, team_str, environment.as_deref(), format).await
+                get_dataset_definitions(client, dataset, team_str, environment.as_deref(), format)
+                    .await
             }
             DatasetDefinitionCommands::Update {
                 dataset,
@@ -55,7 +61,15 @@ impl DatasetDefinitionCommands {
                 format,
             } => {
                 let team_str = global_team.or(team.as_deref()).unwrap_or("default");
-                update_dataset_definitions(client, dataset, team_str, environment.as_deref(), data, format).await
+                update_dataset_definitions(
+                    client,
+                    dataset,
+                    team_str,
+                    environment.as_deref(),
+                    data,
+                    format,
+                )
+                .await
             }
         }
     }
@@ -83,11 +97,16 @@ async fn get_dataset_definitions(
     }
 
     let path = format!("/1/dataset_definitions/{}", dataset);
-    let response = client.get(&path, if query_params.is_empty() {
-        None
-    } else {
-        Some(&query_params)
-    }).await?;
+    let response = client
+        .get(
+            &path,
+            if query_params.is_empty() {
+                None
+            } else {
+                Some(&query_params)
+            },
+        )
+        .await?;
 
     match format {
         OutputFormat::Json => {
