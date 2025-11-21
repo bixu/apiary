@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{pretty_print_json, read_json_file, OutputFormat, DEFAULT_TABLE_FORMAT, DEFAULT_PRETTY_FORMAT};
+use crate::common::{pretty_print_json, read_json_file, OutputFormat, DEFAULT_TABLE_FORMAT, DEFAULT_PRETTY_FORMAT, CommandContext};
 use crate::errors;
 use anyhow::Result;
 use clap::Subcommand;
@@ -103,21 +103,21 @@ impl ApiKeyCommands {
     pub async fn execute(
         &self,
         client: &HoneycombClient,
-        global_team: &Option<String>,
+        context: &CommandContext,
     ) -> Result<()> {
         match self {
             ApiKeyCommands::List { team, format } => {
-                let effective_team = team.as_ref().or(global_team.as_ref())
+                let effective_team = team.as_ref().or(context.team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!(errors::messages::TEAM_REQUIRED))?;
                 list_api_keys(client, effective_team, format).await
             }
             ApiKeyCommands::Get { team, id, format } => {
-                let effective_team = team.as_ref().or(global_team.as_ref())
+                let effective_team = team.as_ref().or(context.team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
                 get_api_key(client, effective_team, id, format).await
             }
             ApiKeyCommands::Create { team, data, format } => {
-                let effective_team = team.as_ref().or(global_team.as_ref())
+                let effective_team = team.as_ref().or(context.team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
                 create_api_key(client, effective_team, data, format).await
             }
@@ -127,12 +127,12 @@ impl ApiKeyCommands {
                 data,
                 format,
             } => {
-                let effective_team = team.as_ref().or(global_team.as_ref())
+                let effective_team = team.as_ref().or(context.team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
                 update_api_key(client, effective_team, id, data, format).await
             }
             ApiKeyCommands::Delete { team, id } => {
-                let effective_team = team.as_ref().or(global_team.as_ref())
+                let effective_team = team.as_ref().or(context.team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
                 delete_api_key(client, effective_team, id).await
             }

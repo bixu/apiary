@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{pretty_print_json, read_json_file, OutputFormat, DEFAULT_TABLE_FORMAT, DEFAULT_PRETTY_FORMAT};
+use crate::common::{pretty_print_json, read_json_file, OutputFormat, DEFAULT_TABLE_FORMAT, DEFAULT_PRETTY_FORMAT, CommandContext};
 use crate::errors;
 use anyhow::Result;
 use clap::Subcommand;
@@ -118,21 +118,21 @@ impl EnvironmentCommands {
     pub async fn execute(
         &self,
         client: &HoneycombClient,
-        global_team: &Option<String>,
+        context: &CommandContext,
     ) -> Result<()> {
         match self {
             EnvironmentCommands::List { team, format } => {
-                let effective_team = team.as_ref().or(global_team.as_ref())
+                let effective_team = team.as_ref().or(context.team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!(errors::messages::TEAM_REQUIRED))?;
                 list_environments(client, effective_team, format).await
             }
             EnvironmentCommands::Get { team, id, format } => {
-                let effective_team = team.as_ref().or(global_team.as_ref())
+                let effective_team = team.as_ref().or(context.team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!(errors::messages::TEAM_REQUIRED))?;
                 get_environment(client, effective_team, id, format).await
             }
             EnvironmentCommands::Create { team, data, format } => {
-                let effective_team = team.as_ref().or(global_team.as_ref())
+                let effective_team = team.as_ref().or(context.team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
                 create_environment(client, effective_team, data, format).await
             }
@@ -142,12 +142,12 @@ impl EnvironmentCommands {
                 data,
                 format,
             } => {
-                let effective_team = team.as_ref().or(global_team.as_ref())
+                let effective_team = team.as_ref().or(context.team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
                 update_environment(client, effective_team, id, data, format).await
             }
             EnvironmentCommands::Delete { team, id } => {
-                let effective_team = team.as_ref().or(global_team.as_ref())
+                let effective_team = team.as_ref().or(context.team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
                 delete_environment(client, effective_team, id).await
             }

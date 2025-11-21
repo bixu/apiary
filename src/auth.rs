@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{OutputFormat, DEFAULT_PRETTY_FORMAT};
+use crate::common::{OutputFormat, DEFAULT_PRETTY_FORMAT, CommandContext};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
@@ -78,7 +78,7 @@ pub struct TeamAttributes {
 }
 
 impl AuthCommands {
-    pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, context: &CommandContext) -> Result<()> {
         match self {
             AuthCommands::Validate { format } => validate_auth(client, format).await,
             AuthCommands::Info => show_key_info(client).await,
