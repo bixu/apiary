@@ -217,7 +217,7 @@ async fn main() -> Result<()> {
     }
 
     let client = HoneycombClient::new(management_key, config_key, api_url);
-    
+
     let context = common::CommandContext {
         team: cli.team,
         global_format: cli.format,

@@ -1,5 +1,8 @@
 use crate::client::HoneycombClient;
-use crate::common::{pretty_print_json, read_json_file, OutputFormat, DEFAULT_TABLE_FORMAT, DEFAULT_PRETTY_FORMAT, CommandContext};
+use crate::common::{
+    pretty_print_json, read_json_file, CommandContext, OutputFormat, DEFAULT_PRETTY_FORMAT,
+    DEFAULT_TABLE_FORMAT,
+};
 use crate::errors;
 use anyhow::Result;
 use clap::Subcommand;
@@ -70,18 +73,16 @@ pub struct Dataset {
 }
 
 impl DatasetCommands {
-    pub async fn execute(
-        &self,
-        client: &HoneycombClient,
-        context: &CommandContext,
-    ) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, context: &CommandContext) -> Result<()> {
         match self {
             DatasetCommands::List {
                 team,
                 environment,
                 format,
             } => {
-                let effective_team = team.as_ref().or(context.team.as_ref())
+                let effective_team = team
+                    .as_ref()
+                    .or(context.team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!(errors::messages::TEAM_REQUIRED))?;
 
                 // Environment is now optional - if not provided, list all datasets

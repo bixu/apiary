@@ -4,8 +4,8 @@
 mod test_utils;
 
 use apiary::client::HoneycombClient;
-use test_utils::*;
 use serde_json::json;
+use test_utils::*;
 use wiremock::{
     matchers::{method, path},
     Mock, MockServer, ResponseTemplate,
@@ -18,12 +18,13 @@ mod api_keys {
     #[tokio::test]
     async fn test_list_api_keys() {
         let mock_server = create_mock_server().await;
-        
+
         mock_successful_list(
             &mock_server,
             "/2/teams/test-team/api_keys",
-            sample_api_key_data()
-        ).await;
+            sample_api_key_data(),
+        )
+        .await;
 
         let client = create_test_client(mock_server.uri());
         let response = client.get("/2/teams/test-team/api_keys", None).await;

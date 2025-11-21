@@ -1,5 +1,7 @@
 use crate::client::HoneycombClient;
-use crate::common::{pretty_print_json, read_json_file, OutputFormat, DEFAULT_PRETTY_FORMAT, CommandContext};
+use crate::common::{
+    pretty_print_json, read_json_file, CommandContext, OutputFormat, DEFAULT_PRETTY_FORMAT,
+};
 use anyhow::Result;
 use clap::Subcommand;
 
@@ -49,7 +51,11 @@ impl DatasetDefinitionCommands {
                 environment,
                 format,
             } => {
-                let team_str = context.team.as_deref().or(team.as_deref()).unwrap_or("default");
+                let team_str = context
+                    .team
+                    .as_deref()
+                    .or(team.as_deref())
+                    .unwrap_or("default");
                 get_dataset_definitions(client, dataset, team_str, environment.as_deref(), format)
                     .await
             }
@@ -60,7 +66,11 @@ impl DatasetDefinitionCommands {
                 data,
                 format,
             } => {
-                let team_str = context.team.as_deref().or(team.as_deref()).unwrap_or("default");
+                let team_str = context
+                    .team
+                    .as_deref()
+                    .or(team.as_deref())
+                    .unwrap_or("default");
                 update_dataset_definitions(
                     client,
                     dataset,

@@ -108,7 +108,7 @@ macro_rules! team_param {
 }
 
 // Macro for standard environment parameter
-#[macro_export] 
+#[macro_export]
 macro_rules! environment_param {
     () => {
         /// Environment slug (uses HONEYCOMB_ENVIRONMENT env var if not specified)

@@ -1,5 +1,8 @@
 use crate::client::HoneycombClient;
-use crate::common::{pretty_print_json, read_json_file, OutputFormat, DEFAULT_TABLE_FORMAT, DEFAULT_PRETTY_FORMAT, CommandContext};
+use crate::common::{
+    pretty_print_json, read_json_file, CommandContext, OutputFormat, DEFAULT_PRETTY_FORMAT,
+    DEFAULT_TABLE_FORMAT,
+};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};

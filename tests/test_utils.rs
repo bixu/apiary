@@ -1,6 +1,9 @@
-use serde_json::json;
-use wiremock::{Mock, MockServer, ResponseTemplate, matchers::{method, path}};
 use crate::client::HoneycombClient;
+use serde_json::json;
+use wiremock::{
+    matchers::{method, path},
+    Mock, MockServer, ResponseTemplate,
+};
 
 /// Create a mock server for testing
 pub async fn create_mock_server() -> MockServer {
@@ -17,7 +20,11 @@ pub fn create_test_client(mock_server_uri: String) -> HoneycombClient {
 }
 
 /// Setup standard mock for successful list responses
-pub async fn mock_successful_list(server: &MockServer, endpoint: &str, response_data: serde_json::Value) {
+pub async fn mock_successful_list(
+    server: &MockServer,
+    endpoint: &str,
+    response_data: serde_json::Value,
+) {
     Mock::given(method("GET"))
         .and(path(endpoint))
         .respond_with(ResponseTemplate::new(200).set_body_json(response_data))
@@ -26,7 +33,11 @@ pub async fn mock_successful_list(server: &MockServer, endpoint: &str, response_
 }
 
 /// Setup standard mock for successful get responses  
-pub async fn mock_successful_get(server: &MockServer, endpoint: &str, response_data: serde_json::Value) {
+pub async fn mock_successful_get(
+    server: &MockServer,
+    endpoint: &str,
+    response_data: serde_json::Value,
+) {
     Mock::given(method("GET"))
         .and(path(endpoint))
         .respond_with(ResponseTemplate::new(200).set_body_json(response_data))
