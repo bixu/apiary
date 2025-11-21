@@ -199,9 +199,9 @@ jobs:
                 \"version\": \"${{ needs.check_version.outputs.version }}\",
                 \"release_url\": \"https://github.com/${{ github.repository }}/releases/tag/${{ needs.check_version.outputs.version }}\",
                 \"sha\": \"${{ github.sha }}\",
-                "sha256_aarch64_apple_darwin": "${{ needs.collect_artifacts.outputs.sha256_aarch64_apple_darwin }}",
-                "sha256_x86_64_apple_darwin": "${{ needs.collect_artifacts.outputs.sha256_x86_64_apple_darwin }}",
-                "sha256_x86_64_unknown_linux_gnu": "${{ needs.collect_artifacts.outputs.sha256_x86_64_unknown_linux_gnu }}"
+                \"sha256_aarch64_apple_darwin\": \"${{ needs.collect_artifacts.outputs.sha256_aarch64_apple_darwin }}\",
+                \"sha256_x86_64_apple_darwin\": \"${{ needs.collect_artifacts.outputs.sha256_x86_64_apple_darwin }}\",
+                \"sha256_x86_64_unknown_linux_gnu\": \"${{ needs.collect_artifacts.outputs.sha256_x86_64_unknown_linux_gnu }}\"
               }
             }")
           
