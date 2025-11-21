@@ -58,6 +58,12 @@ jobs:
           echo "archive=apiary-${RUSTTARGET}.tar.gz" >> $GITHUB_OUTPUT
           echo "sha256_file=apiary-${RUSTTARGET}.tar.gz.sha256" >> $GITHUB_OUTPUT
 
+      - name: Upload SHA256 as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sha256-${{ matrix.target }}
+          path: apiary-${{ matrix.target }}.tar.gz.sha256
+
       - name: Upload release archive
         uses: actions/upload-release-asset@v1.0.2
         env:
@@ -68,8 +74,41 @@ jobs:
           asset_name: apiary-${{ matrix.target }}.tar.gz
           asset_content_type: application/gzip
 
-  trigger-homebrew-update:
+  collect-artifacts:
     needs: apiary
+    runs-on: ubuntu-latest
+    if: github.event.action == 'published'
+    outputs:
+      sha256_aarch64_apple_darwin: ${{ steps.collect.outputs.sha256_aarch64_apple_darwin }}
+      sha256_x86_64_apple_darwin: ${{ steps.collect.outputs.sha256_x86_64_apple_darwin }}
+      sha256_x86_64_unknown_linux_gnu: ${{ steps.collect.outputs.sha256_x86_64_unknown_linux_gnu }}
+    steps:
+      - name: Download SHA256 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sha256-*
+          merge-multiple: true
+
+      - name: Collect SHA256 hashes
+        id: collect
+        run: |
+          if [ -f "apiary-aarch64-apple-darwin.tar.gz.sha256" ]; then
+            sha256_aarch64=$(cat apiary-aarch64-apple-darwin.tar.gz.sha256 | awk '{print $1}')
+            echo "sha256_aarch64_apple_darwin=$sha256_aarch64" >> $GITHUB_OUTPUT
+          fi
+          
+          if [ -f "apiary-x86_64-apple-darwin.tar.gz.sha256" ]; then
+            sha256_x86_64_darwin=$(cat apiary-x86_64-apple-darwin.tar.gz.sha256 | awk '{print $1}')
+            echo "sha256_x86_64_apple_darwin=$sha256_x86_64_darwin" >> $GITHUB_OUTPUT
+          fi
+          
+          if [ -f "apiary-x86_64-unknown-linux-gnu.tar.gz.sha256" ]; then
+            sha256_x86_64_linux=$(cat apiary-x86_64-unknown-linux-gnu.tar.gz.sha256 | awk '{print $1}')
+            echo "sha256_x86_64_unknown_linux_gnu=$sha256_x86_64_linux" >> $GITHUB_OUTPUT
+          fi
+
+  trigger-homebrew-update:
+    needs: [apiary, collect-artifacts]
     runs-on: ubuntu-latest
     if: github.event.action == 'published'
     steps:
@@ -89,7 +128,10 @@ jobs:
               \"client_payload\": {
                 \"version\": \"${{ github.event.release.tag_name }}\",
                 \"release_url\": \"${{ github.event.release.html_url }}\",
-                \"sha\": \"${{ github.sha }}\"
+                \"sha\": \"${{ github.sha }}\",
+                \"sha256_aarch64_apple_darwin\": \"${{ needs.collect-artifacts.outputs.sha256_aarch64_apple_darwin }}\",
+                \"sha256_x86_64_apple_darwin\": \"${{ needs.collect-artifacts.outputs.sha256_x86_64_apple_darwin }}\",
+                \"sha256_x86_64_unknown_linux_gnu\": \"${{ needs.collect-artifacts.outputs.sha256_x86_64_unknown_linux_gnu }}\"
               }
             }")
           
