@@ -1,13 +1,83 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
 
 jobs:
+  check_version:
+    name: Check Version and Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release_created: ${{ steps.release.outputs.release_created }}
+      upload_url: ${{ steps.release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from Cargo.toml
+        id: version
+        run: |
+          VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Found version: $VERSION"
+
+      - name: Check if tag exists
+        id: tag_check
+        run: |
+          if git tag --list | grep -q "^v${{ steps.version.outputs.version }}$"; then
+            echo "Tag v${{ steps.version.outputs.version }} already exists"
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Tag v${{ steps.version.outputs.version }} does not exist"
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create tag and release
+        id: release
+        if: steps.tag_check.outputs.tag_exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG_NAME="v$VERSION"
+          
+          # Create and push tag
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG_NAME" -m "Release version $VERSION"
+          git push origin "$TAG_NAME"
+          
+          # Create GitHub release
+          response=$(curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/releases \
+            -d "{
+              \"tag_name\": \"$TAG_NAME\",
+              \"target_commitish\": \"${{ github.sha }}\",
+              \"name\": \"Release $VERSION\",
+              \"body\": \"Release version $VERSION\",
+              \"draft\": false,
+              \"prerelease\": false
+            }")
+          
+          upload_url=$(echo "$response" | jq -r '.upload_url')
+          release_id=$(echo "$response" | jq -r '.id')
+          
+          echo "release_created=true" >> $GITHUB_OUTPUT
+          echo "upload_url=$upload_url" >> $GITHUB_OUTPUT
+          echo "release_id=$release_id" >> $GITHUB_OUTPUT
+          echo "Created release with upload URL: $upload_url"
+
   apiary:
     name: apiary ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
+    needs: check_version
+    if: needs.check_version.outputs.release_created == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -69,15 +139,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ needs.check_version.outputs.upload_url }}
           asset_path: ./apiary-${{ matrix.target }}.tar.gz
           asset_name: apiary-${{ matrix.target }}.tar.gz
           asset_content_type: application/gzip
 
-  collect-artifacts:
-    needs: apiary
+  collect_artifacts:
+    needs: [check_version, apiary]
     runs-on: ubuntu-latest
-    if: github.event.action == 'published'
+    if: needs.check_version.outputs.release_created == 'true'
     outputs:
       sha256_aarch64_apple_darwin: ${{ steps.collect.outputs.sha256_aarch64_apple_darwin }}
       sha256_x86_64_apple_darwin: ${{ steps.collect.outputs.sha256_x86_64_apple_darwin }}
@@ -96,27 +166,27 @@ jobs:
             sha256_aarch64=$(cat apiary-aarch64-apple-darwin.tar.gz.sha256 | awk '{print $1}')
             echo "sha256_aarch64_apple_darwin=$sha256_aarch64" >> $GITHUB_OUTPUT
           fi
-
+          
           if [ -f "apiary-x86_64-apple-darwin.tar.gz.sha256" ]; then
             sha256_x86_64_darwin=$(cat apiary-x86_64-apple-darwin.tar.gz.sha256 | awk '{print $1}')
             echo "sha256_x86_64_apple_darwin=$sha256_x86_64_darwin" >> $GITHUB_OUTPUT
           fi
-
+          
           if [ -f "apiary-x86_64-unknown-linux-gnu.tar.gz.sha256" ]; then
             sha256_x86_64_linux=$(cat apiary-x86_64-unknown-linux-gnu.tar.gz.sha256 | awk '{print $1}')
             echo "sha256_x86_64_unknown_linux_gnu=$sha256_x86_64_linux" >> $GITHUB_OUTPUT
           fi
 
   trigger-homebrew-update:
-    needs: [apiary, collect-artifacts]
+    needs: [check_version, collect_artifacts]
     runs-on: ubuntu-latest
-    if: github.event.action == 'published'
+    if: needs.check_version.outputs.release_created == 'true'
     steps:
       - name: Trigger Homebrew tap update
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
-          echo "Triggering repository dispatch for version: ${{ github.event.release.tag_name }}"
+          echo "Triggering repository dispatch for version: v${{ needs.check_version.outputs.version }}"
           
           response=$(curl -w "%{http_code}" -s -o /tmp/dispatch_response.json -X POST \
             -H "Authorization: token $GITHUB_TOKEN" \
@@ -129,9 +199,9 @@ jobs:
                 \"version\": \"${{ github.event.release.tag_name }}\",
                 \"release_url\": \"${{ github.event.release.html_url }}\",
                 \"sha\": \"${{ github.sha }}\",
-                \"sha256_aarch64_apple_darwin\": \"${{ needs.collect-artifacts.outputs.sha256_aarch64_apple_darwin }}\",
-                \"sha256_x86_64_apple_darwin\": \"${{ needs.collect-artifacts.outputs.sha256_x86_64_apple_darwin }}\",
-                \"sha256_x86_64_unknown_linux_gnu\": \"${{ needs.collect-artifacts.outputs.sha256_x86_64_unknown_linux_gnu }}\"
+                "sha256_aarch64_apple_darwin": "${{ needs.collect_artifacts.outputs.sha256_aarch64_apple_darwin }}",
+                "sha256_x86_64_apple_darwin": "${{ needs.collect_artifacts.outputs.sha256_x86_64_apple_darwin }}",
+                "sha256_x86_64_unknown_linux_gnu": "${{ needs.collect_artifacts.outputs.sha256_x86_64_unknown_linux_gnu }}"
               }
             }")
           

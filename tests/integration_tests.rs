@@ -97,3 +97,50 @@ async fn test_datasets_list_short_flags() {
         .stdout(predicate::str::contains("-t, --team"))
         .stdout(predicate::str::contains("-e, --environment"));
 }
+
+/// Test all main help commands work correctly
+#[tokio::test]
+async fn test_all_help_commands() {
+    let help_commands = vec![
+        vec!["--help"],
+        vec!["datasets", "--help"],
+        vec!["datasets", "list", "--help"],
+        vec!["environments", "--help"],
+        vec!["api-keys", "--help"],
+    ];
+
+    for cmd_args in help_commands {
+        let mut cmd = Command::new("cargo");
+        cmd.args(["run", "--"]);
+        cmd.args(&cmd_args);
+
+        cmd.assert()
+            .success()
+            .stdout(predicate::str::is_empty().not());
+    }
+}
+
+/// Test environment variable recognition in help output
+#[tokio::test]
+async fn test_environment_variable_recognition() {
+    let mut cmd = Command::new("cargo");
+    cmd.args(["run", "--", "--help"]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("HONEYCOMB_MANAGEMENT_API_KEY"))
+        .stdout(predicate::str::contains("HONEYCOMB_CONFIGURATION_API_KEY"))
+        .stdout(predicate::str::contains("HONEYCOMB_API_KEY"));
+}
+
+/// Test binary version output
+#[tokio::test]
+async fn test_version_command() {
+    let mut cmd = Command::new("cargo");
+    cmd.args(["run", "--", "--version"]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("apiary"))
+        .stdout(predicate::str::is_empty().not());
+}
