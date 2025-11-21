@@ -38,7 +38,7 @@ jobs:
 
       - run: rustup target add ${{ steps.build.outputs.target }}
 
-      - uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1
 
       - name: Compile and release
         id: compile
