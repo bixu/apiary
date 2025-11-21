@@ -9,7 +9,7 @@ pub enum EnvironmentCommands {
     /// List all environments in a team
     List {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long)]
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
         /// Output format
         #[arg(short, long, default_value = "table")]
@@ -18,7 +18,7 @@ pub enum EnvironmentCommands {
     /// Get a specific environment
     Get {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long)]
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
         /// Environment ID
         #[arg(short, long)]
@@ -30,7 +30,7 @@ pub enum EnvironmentCommands {
     /// Create a new environment
     Create {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long)]
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
         /// Environment data (JSON file path or inline JSON)
         #[arg(long)]
@@ -42,7 +42,7 @@ pub enum EnvironmentCommands {
     /// Update an environment
     Update {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long)]
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
         /// Environment ID
         #[arg(short, long)]
@@ -57,7 +57,7 @@ pub enum EnvironmentCommands {
     /// Delete an environment
     Delete {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long)]
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
         /// Environment ID
         #[arg(short, long)]

@@ -10,7 +10,7 @@ pub enum ApiKeyCommands {
     /// List all API keys in a team
     List {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long)]
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
         /// Output format
         #[arg(short, long, default_value = "table")]
@@ -19,7 +19,7 @@ pub enum ApiKeyCommands {
     /// Get a specific API key
     Get {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long)]
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
         /// API Key ID
         #[arg(short, long)]
@@ -31,7 +31,7 @@ pub enum ApiKeyCommands {
     /// Create a new API key
     Create {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long)]
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
         /// API key data (JSON file path or inline JSON)
         #[arg(long)]
@@ -43,7 +43,7 @@ pub enum ApiKeyCommands {
     /// Update an API key
     Update {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long)]
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
         /// API Key ID
         #[arg(short, long)]
@@ -58,7 +58,7 @@ pub enum ApiKeyCommands {
     /// Delete an API key
     Delete {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long)]
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
         /// API Key ID
         #[arg(short, long)]

@@ -10,11 +10,11 @@ pub enum DatasetCommands {
     /// List all datasets
     List {
         /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long)]
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
         team: Option<String>,
-        /// Environment slug (required)
-        #[arg(short, long)]
-        environment: String,
+        /// Environment slug (uses HONEYCOMB_ENVIRONMENT env var if not specified)
+        #[arg(short, long, env = "HONEYCOMB_ENVIRONMENT")]
+        environment: Option<String>,
         /// Output format
         #[arg(short, long, default_value = "table")]
         format: OutputFormat,
@@ -82,7 +82,9 @@ impl DatasetCommands {
             } => {
                 let effective_team = team.as_ref().or(global_team.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable."))?;
-                list_datasets(client, effective_team, environment, format).await
+                
+                // Environment is now optional - if not provided, list all datasets
+                list_datasets(client, effective_team, environment.as_deref(), format).await
             }
             DatasetCommands::Get { dataset, format } => get_dataset(client, dataset, format).await,
             DatasetCommands::Create { data, format } => create_dataset(client, data, format).await,
@@ -99,20 +101,31 @@ impl DatasetCommands {
 async fn list_datasets(
     client: &HoneycombClient,
     team: &str,
-    environment: &str,
+    environment: Option<&str>,
     format: &OutputFormat,
 ) -> Result<()> {
     use crate::common::require_valid_environment;
     use std::collections::HashMap;
 
-    // Validate environment exists
-    require_valid_environment(client, team, environment).await?;
+    // If environment is provided, validate it exists
+    if let Some(env) = environment {
+        require_valid_environment(client, team, env).await?;
+    }
 
     // Build query parameters
     let mut query_params = HashMap::new();
-    query_params.insert("environment".to_string(), environment.to_string());
+    if let Some(env) = environment {
+        query_params.insert("environment".to_string(), env.to_string());
+    }
 
-    let response = client.get("/1/datasets", Some(&query_params)).await?;
+    let response = client.get(
+        "/1/datasets",
+        if query_params.is_empty() {
+            None
+        } else {
+            Some(&query_params)
+        },
+    ).await?;
 
     match format {
         OutputFormat::Json => {
