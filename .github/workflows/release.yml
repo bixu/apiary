@@ -96,12 +96,12 @@ jobs:
             sha256_aarch64=$(cat apiary-aarch64-apple-darwin.tar.gz.sha256 | awk '{print $1}')
             echo "sha256_aarch64_apple_darwin=$sha256_aarch64" >> $GITHUB_OUTPUT
           fi
-          
+
           if [ -f "apiary-x86_64-apple-darwin.tar.gz.sha256" ]; then
             sha256_x86_64_darwin=$(cat apiary-x86_64-apple-darwin.tar.gz.sha256 | awk '{print $1}')
             echo "sha256_x86_64_apple_darwin=$sha256_x86_64_darwin" >> $GITHUB_OUTPUT
           fi
-          
+
           if [ -f "apiary-x86_64-unknown-linux-gnu.tar.gz.sha256" ]; then
             sha256_x86_64_linux=$(cat apiary-x86_64-unknown-linux-gnu.tar.gz.sha256 | awk '{print $1}')
             echo "sha256_x86_64_unknown_linux_gnu=$sha256_x86_64_linux" >> $GITHUB_OUTPUT
