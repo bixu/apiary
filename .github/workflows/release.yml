@@ -77,9 +77,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
-          curl -X POST \
+          echo "Triggering repository dispatch for version: ${{ github.event.release.tag_name }}"
+          
+          response=$(curl -w "%{http_code}" -s -o /tmp/dispatch_response.json -X POST \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
+            -H "Content-Type: application/json" \
             https://api.github.com/repos/bixu/homebrew-apiary/dispatches \
             -d "{
               \"event_type\": \"update-formula\",
@@ -87,4 +90,15 @@ jobs:
                 \"version\": \"${{ github.event.release.tag_name }}\",
                 \"release_url\": \"${{ github.event.release.html_url }}\"
               }
-            }"
+            }")
+          
+          echo "HTTP Response Code: $response"
+          echo "Response Body:"
+          cat /tmp/dispatch_response.json
+          
+          if [ "$response" -ne 204 ]; then
+            echo "❌ Failed to trigger repository dispatch (expected HTTP 204)"
+            exit 1
+          else
+            echo "✅ Successfully triggered repository dispatch"
+          fi
