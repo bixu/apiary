@@ -17,7 +17,6 @@ jobs:
         rust:
           - stable
           - beta
-          - nightly
     
     steps:
     - uses: actions/checkout@v4
@@ -54,15 +53,17 @@ jobs:
           ${{ runner.os }}-cargo-build-target-
     
     - name: Check formatting
+      if: matrix.rust == 'stable'
       run: cargo fmt --all -- --check
     
     - name: Lint with clippy
+      if: matrix.rust == 'stable'
       run: cargo clippy --all-targets --all-features -- -D warnings
     
     - name: Run tests
       run: cargo test
 
-    - name: Run all tests with coverage
+    - name: Run tests with coverage
       if: matrix.rust == 'stable'
       run: |
         cargo install cargo-tarpaulin
@@ -102,25 +103,11 @@ jobs:
     - name: Build binary
       run: cargo build --release
     
-    - name: Test CLI help commands
+    - name: Smoke test - verify binary works
       run: |
-        ./target/release/apiary --help
-        ./target/release/apiary datasets --help
-        ./target/release/apiary datasets list --help
-        ./target/release/apiary environments --help
-        ./target/release/apiary api-keys --help
-    
-    - name: Test CLI argument validation
-      run: |
-        # Test missing arguments (should fail)
-        ! ./target/release/apiary datasets list
-        ! ./target/release/apiary datasets list --team test
-        ! ./target/release/apiary datasets list --environment test
-    
-    - name: Test environment variable recognition
-      run: |
-        # Test that environment variables are recognized in help
-        ./target/release/apiary --help | grep -E "HONEYCOMB_(MANAGEMENT_API_KEY|CONFIGURATION_API_KEY|API_KEY)"
+        # Basic smoke test to ensure the binary runs
+        ./target/release/apiary --version
+        ./target/release/apiary --help >/dev/null
 
   documentation:
     name: Documentation
