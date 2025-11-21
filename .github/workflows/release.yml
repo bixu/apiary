@@ -88,7 +88,8 @@ jobs:
               \"event_type\": \"update-formula\",
               \"client_payload\": {
                 \"version\": \"${{ github.event.release.tag_name }}\",
-                \"release_url\": \"${{ github.event.release.html_url }}\"
+                \"release_url\": \"${{ github.event.release.html_url }}\",
+                \"sha\": \"${{ github.sha }}\"
               }
             }")
           
