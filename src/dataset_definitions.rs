@@ -10,6 +10,12 @@ pub enum DatasetDefinitionCommands {
         /// Dataset slug
         #[arg(short, long)]
         dataset: String,
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
+        team: Option<String>,
+        /// Environment slug (optional, uses HONEYCOMB_ENVIRONMENT env var if not specified)
+        #[arg(short, long, env = "HONEYCOMB_ENVIRONMENT")]
+        environment: Option<String>,
         /// Output format
         #[arg(short, long, default_value = "pretty")]
         format: OutputFormat,
@@ -19,6 +25,12 @@ pub enum DatasetDefinitionCommands {
         /// Dataset slug
         #[arg(short, long)]
         dataset: String,
+        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
+        #[arg(short, long, env = "HONEYCOMB_TEAM")]
+        team: Option<String>,
+        /// Environment slug (optional, uses HONEYCOMB_ENVIRONMENT env var if not specified)
+        #[arg(short, long, env = "HONEYCOMB_ENVIRONMENT")]
+        environment: Option<String>,
         /// Dataset definition data (JSON file path or inline JSON)
         #[arg(long)]
         data: String,
@@ -29,16 +41,22 @@ pub enum DatasetDefinitionCommands {
 }
 
 impl DatasetDefinitionCommands {
-    pub async fn execute(&self, client: &HoneycombClient) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, global_team: Option<&str>) -> Result<()> {
         match self {
-            DatasetDefinitionCommands::Get { dataset, format } => {
-                get_dataset_definitions(client, dataset, format).await
+            DatasetDefinitionCommands::Get { dataset, team, environment, format } => {
+                let team_str = global_team.or(team.as_deref()).unwrap_or("default");
+                get_dataset_definitions(client, dataset, team_str, environment.as_deref(), format).await
             }
             DatasetDefinitionCommands::Update {
                 dataset,
+                team,
+                environment,
                 data,
                 format,
-            } => update_dataset_definitions(client, dataset, data, format).await,
+            } => {
+                let team_str = global_team.or(team.as_deref()).unwrap_or("default");
+                update_dataset_definitions(client, dataset, team_str, environment.as_deref(), data, format).await
+            }
         }
     }
 }
@@ -46,10 +64,30 @@ impl DatasetDefinitionCommands {
 async fn get_dataset_definitions(
     client: &HoneycombClient,
     dataset: &str,
+    team: &str,
+    environment: Option<&str>,
     format: &OutputFormat,
 ) -> Result<()> {
+    use crate::common::require_valid_environment;
+    use std::collections::HashMap;
+
+    // If environment is provided, validate it exists
+    if let Some(env) = environment {
+        require_valid_environment(client, team, env).await?;
+    }
+
+    // Build query parameters
+    let mut query_params = HashMap::new();
+    if let Some(env) = environment {
+        query_params.insert("environment".to_string(), env.to_string());
+    }
+
     let path = format!("/1/dataset_definitions/{}", dataset);
-    let response = client.get(&path, None).await?;
+    let response = client.get(&path, if query_params.is_empty() {
+        None
+    } else {
+        Some(&query_params)
+    }).await?;
 
     match format {
         OutputFormat::Json => {
@@ -66,14 +104,30 @@ async fn get_dataset_definitions(
 async fn update_dataset_definitions(
     client: &HoneycombClient,
     dataset: &str,
+    team: &str,
+    environment: Option<&str>,
     data: &str,
     format: &OutputFormat,
 ) -> Result<()> {
+    use crate::common::require_valid_environment;
+    use std::collections::HashMap;
+
+    // If environment is provided, validate it exists
+    if let Some(env) = environment {
+        require_valid_environment(client, team, env).await?;
+    }
+
     let json_data = if std::path::Path::new(data).exists() {
         read_json_file(data)?
     } else {
         serde_json::from_str(data)?
     };
+
+    // Build query parameters for the request if needed
+    let mut query_params = HashMap::new();
+    if let Some(env) = environment {
+        query_params.insert("environment".to_string(), env.to_string());
+    }
 
     let path = format!("/1/dataset_definitions/{}", dataset);
     let response = client.patch(&path, &json_data).await?;
