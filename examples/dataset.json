@@ -1,0 +1,6 @@
+{
+  "name": "my-application",
+  "description": "Main application dataset for monitoring",
+  "expand_json_depth": 3,
+  "delete_protected": true
+}
