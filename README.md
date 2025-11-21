@@ -1,4 +1,4 @@
-# Apiary - A (Honeycomb.io) API on the CLI
+# Apiary - The (Honeycomb.io) API on the CLI
 
 `apiary` attempts to provide coverage of most Honeycomb API resources.
 
