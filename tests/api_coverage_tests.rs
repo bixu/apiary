@@ -4,12 +4,22 @@
 mod test_utils;
 
 use apiary::client::HoneycombClient;
+use apiary::common::CommandContext;
 use serde_json::json;
 use test_utils::*;
 use wiremock::{
     matchers::{method, path},
     Mock, MockServer, ResponseTemplate,
 };
+
+/// Helper function to create a test CommandContext
+fn create_test_context() -> CommandContext {
+    CommandContext {
+        team: None,
+        global_format: None,
+        verbose: false,
+    }
+}
 
 /// Test API Keys endpoints
 mod api_keys {
@@ -100,7 +110,13 @@ mod environments {
             format: OutputFormat::Json,
         };
 
-        let result = command.execute(&client, &None).await;
+        let context = CommandContext {
+            team: Some("test-team".to_string()),
+            global_format: None,
+            verbose: false,
+        };
+
+        let result = command.execute(&client, &context).await;
         assert!(result.is_ok());
     }
 }
@@ -197,7 +213,7 @@ mod columns {
             environment: None,
         };
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, &create_test_context()).await;
         assert!(result.is_ok());
     }
 }
@@ -239,7 +255,7 @@ mod triggers {
             environment: None,
         };
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, &create_test_context()).await;
         assert!(result.is_ok());
     }
 }
@@ -280,7 +296,7 @@ mod slos {
             environment: None,
         };
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, &create_test_context()).await;
         assert!(result.is_ok());
     }
 }
@@ -319,7 +335,7 @@ mod boards {
             format: OutputFormat::Json,
         };
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, &create_test_context()).await;
         assert!(result.is_ok());
     }
 }
@@ -360,7 +376,7 @@ mod markers {
             environment: None,
         };
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, &create_test_context()).await;
         assert!(result.is_ok());
     }
 }
@@ -399,7 +415,7 @@ mod recipients {
             format: OutputFormat::Json,
         };
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, &create_test_context()).await;
         assert!(result.is_ok());
     }
 }
@@ -441,7 +457,7 @@ mod burn_alerts {
             environment: None,
         };
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, &create_test_context()).await;
         assert!(result.is_ok());
     }
 }
@@ -481,7 +497,7 @@ mod calculated_fields {
             environment: None,
         };
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, &create_test_context()).await;
         assert!(result.is_ok());
     }
 }
@@ -520,7 +536,7 @@ mod dataset_definitions {
             format: OutputFormat::Json,
         };
 
-        let result = command.execute(&client, None).await;
+        let result = command.execute(&client, &create_test_context()).await;
         assert!(result.is_ok());
     }
 }
@@ -560,7 +576,7 @@ mod marker_settings {
             environment: None,
         };
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, &create_test_context()).await;
         assert!(result.is_ok());
     }
 }
@@ -597,7 +613,7 @@ mod auth {
 
         let command = AuthCommands::Info;
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, &create_test_context()).await;
         assert!(result.is_ok());
     }
 }

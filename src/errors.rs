@@ -1,8 +1,8 @@
-use anyhow::Result;
 use serde_json::Value;
 use std::fmt;
 
 /// Standard error types for the CLI
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum ApiaryError {
     /// Authentication required but not provided
@@ -52,6 +52,7 @@ impl fmt::Display for ApiaryError {
 impl std::error::Error for ApiaryError {}
 
 /// Helper function to parse API error responses
+#[allow(dead_code)]
 pub fn parse_api_error(status: u16, body: &Value) -> ApiaryError {
     let message = body
         .get("error")
@@ -67,6 +68,7 @@ pub fn parse_api_error(status: u16, body: &Value) -> ApiaryError {
 pub mod messages {
     pub const TEAM_REQUIRED: &str =
         "Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable.";
+    #[allow(dead_code)]
     pub const ENVIRONMENT_REQUIRED: &str = "Environment is required. Use --environment flag or set HONEYCOMB_ENVIRONMENT environment variable.";
     pub const MANAGEMENT_KEY_REQUIRED: &str = "Management API key required for v2 endpoints. Set HONEYCOMB_MANAGEMENT_API_KEY_ID and HONEYCOMB_MANAGEMENT_API_KEY.";
     pub const CONFIG_KEY_REQUIRED: &str =

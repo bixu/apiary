@@ -67,7 +67,7 @@ pub struct Recipient {
 }
 
 impl RecipientCommands {
-    pub async fn execute(&self, client: &HoneycombClient, context: &CommandContext) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, _context: &CommandContext) -> Result<()> {
         match self {
             RecipientCommands::List { format } => list_recipients(client, format).await,
             RecipientCommands::Get { id, format } => get_recipient(client, id, format).await,

@@ -83,7 +83,7 @@ pub struct CalculatedField {
 }
 
 impl CalculatedFieldCommands {
-    pub async fn execute(&self, client: &HoneycombClient, context: &CommandContext) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, _context: &CommandContext) -> Result<()> {
         match self {
             CalculatedFieldCommands::List {
                 dataset,

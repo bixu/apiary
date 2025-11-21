@@ -86,7 +86,7 @@ pub struct BurnAlert {
 }
 
 impl BurnAlertCommands {
-    pub async fn execute(&self, client: &HoneycombClient, context: &CommandContext) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, _context: &CommandContext) -> Result<()> {
         match self {
             BurnAlertCommands::List {
                 dataset,

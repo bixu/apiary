@@ -1,4 +1,4 @@
-use crate::client::HoneycombClient;
+use apiary::client::HoneycombClient;
 use serde_json::json;
 use wiremock::{
     matchers::{method, path},
@@ -33,6 +33,7 @@ pub async fn mock_successful_list(
 }
 
 /// Setup standard mock for successful get responses  
+#[allow(dead_code)]
 pub async fn mock_successful_get(
     server: &MockServer,
     endpoint: &str,
@@ -46,6 +47,7 @@ pub async fn mock_successful_get(
 }
 
 /// Setup standard mock for 404 responses
+#[allow(dead_code)]
 pub async fn mock_not_found(server: &MockServer, endpoint: &str) {
     Mock::given(method("GET"))
         .and(path(endpoint))
@@ -57,6 +59,7 @@ pub async fn mock_not_found(server: &MockServer, endpoint: &str) {
 }
 
 /// Standard test data for environments
+#[allow(dead_code)]
 pub fn sample_environment_data() -> serde_json::Value {
     json!({
         "data": [
@@ -74,6 +77,7 @@ pub fn sample_environment_data() -> serde_json::Value {
 }
 
 /// Standard test data for datasets
+#[allow(dead_code)]
 pub fn sample_dataset_data() -> serde_json::Value {
     json!({
         "data": [

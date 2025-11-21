@@ -6,14 +6,18 @@ use serde_json::Value;
 // Constants for consistency
 pub const DEFAULT_TABLE_FORMAT: &str = "table";
 pub const DEFAULT_PRETTY_FORMAT: &str = "pretty";
+#[allow(dead_code)]
 pub const HONEYCOMB_TEAM_ENV: &str = "HONEYCOMB_TEAM";
+#[allow(dead_code)]
 pub const HONEYCOMB_ENVIRONMENT_ENV: &str = "HONEYCOMB_ENVIRONMENT";
 
 // Context for command execution
 #[derive(Debug, Clone)]
 pub struct CommandContext {
     pub team: Option<String>,
+    #[allow(dead_code)]
     pub global_format: Option<OutputFormat>,
+    #[allow(dead_code)]
     pub verbose: bool,
 }
 
@@ -128,6 +132,7 @@ macro_rules! format_param {
 }
 
 // Helper function to resolve team parameter
+#[allow(dead_code)]
 pub fn resolve_team(local_team: &Option<String>, context: &CommandContext) -> Result<String> {
     local_team
         .as_ref()

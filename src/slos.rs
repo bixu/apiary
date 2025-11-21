@@ -113,7 +113,7 @@ pub struct SloFilter {
 }
 
 impl SloCommands {
-    pub async fn execute(&self, client: &HoneycombClient, context: &CommandContext) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, _context: &CommandContext) -> Result<()> {
         match self {
             SloCommands::List {
                 dataset,

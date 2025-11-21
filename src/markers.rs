@@ -72,7 +72,7 @@ pub struct Marker {
 }
 
 impl MarkerCommands {
-    pub async fn execute(&self, client: &HoneycombClient, context: &CommandContext) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, _context: &CommandContext) -> Result<()> {
         match self {
             MarkerCommands::List {
                 dataset,

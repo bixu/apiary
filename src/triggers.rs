@@ -117,7 +117,7 @@ pub struct TriggerThreshold {
 }
 
 impl TriggerCommands {
-    pub async fn execute(&self, client: &HoneycombClient, context: &CommandContext) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, _context: &CommandContext) -> Result<()> {
         match self {
             TriggerCommands::List {
                 dataset,

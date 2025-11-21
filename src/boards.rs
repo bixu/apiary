@@ -77,7 +77,7 @@ pub struct BoardQuery {
 }
 
 impl BoardCommands {
-    pub async fn execute(&self, client: &HoneycombClient, context: &CommandContext) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, _context: &CommandContext) -> Result<()> {
         match self {
             BoardCommands::List {
                 environment,

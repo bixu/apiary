@@ -78,7 +78,7 @@ pub struct TeamAttributes {
 }
 
 impl AuthCommands {
-    pub async fn execute(&self, client: &HoneycombClient, context: &CommandContext) -> Result<()> {
+    pub async fn execute(&self, client: &HoneycombClient, _context: &CommandContext) -> Result<()> {
         match self {
             AuthCommands::Validate { format } => validate_auth(client, format).await,
             AuthCommands::Info => show_key_info(client).await,
