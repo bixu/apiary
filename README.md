@@ -103,20 +103,6 @@ apiary queries create --dataset=myapp --data=query.json
 apiary queries get --dataset=myapp --id=query123
 ```
 
-### Event Ingestion
-
-```shell
-# Send single event
-apiary events --dataset=myapp --data='{
-  "timestamp": "2023-11-20T10:00:00Z",
-  "service": "web",
-  "duration_ms": 150
-}'
-
-# Send batch events
-apiary events --dataset=myapp --batch --data=events.json
-```
-
 ### Trigger Management
 
 ```shell
