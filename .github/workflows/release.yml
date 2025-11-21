@@ -13,7 +13,7 @@ jobs:
           - macos-13
           - macos-14
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+      - uses: actions/checkout@v4
 
       - id: build
         run: |
@@ -38,7 +38,7 @@ jobs:
 
       - run: rustup target add ${{ steps.build.outputs.target }}
 
-      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1
+      - uses: Swatinem/rust-cache@v2
 
       - name: Compile and release
         id: compile
@@ -47,10 +47,47 @@ jobs:
           RUSTTARGET: ${{ steps.build.outputs.target }}
         run: |
           cargo build --release --target "${RUSTTARGET}"
+          
+          # Create directory for packaging
+          mkdir -p dist
+          
+          # Copy binary and create tar.gz archive
+          cp target/${RUSTTARGET}/release/apiary dist/
+          tar -czf apiary-${RUSTTARGET}.tar.gz -C dist apiary
+          
+          # Calculate SHA256 for Homebrew formula
+          sha256sum apiary-${RUSTTARGET}.tar.gz > apiary-${RUSTTARGET}.tar.gz.sha256
+          
+          echo "archive=apiary-${RUSTTARGET}.tar.gz" >> $GITHUB_OUTPUT
+          echo "sha256_file=apiary-${RUSTTARGET}.tar.gz.sha256" >> $GITHUB_OUTPUT
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+      - name: Upload release archive
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: apiary ${{ steps.build.outputs.target }}
-          path: |
-            target/${{ steps.build.outputs.target }}/release/apiary
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./apiary-${{ steps.build.outputs.target }}.tar.gz
+          asset_name: apiary-${{ steps.build.outputs.target }}.tar.gz
+          asset_content_type: application/gzip
+
+  trigger-homebrew-update:
+    needs: apiary
+    runs-on: ubuntu-latest
+    if: github.event.action == 'published'
+    steps:
+      - name: Trigger Homebrew tap update
+        env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/bixu/homebrew-apiary/dispatches \
+            -d "{
+              \"event_type\": \"update-formula\",
+              \"client_payload\": {
+                \"version\": \"${{ github.event.release.tag_name }}\",
+                \"release_url\": \"${{ github.event.release.html_url }}\"
+              }
+            }"
