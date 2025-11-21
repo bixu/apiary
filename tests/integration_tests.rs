@@ -7,15 +7,18 @@ async fn test_datasets_list_requires_team_and_environment() {
     let mut cmd = Command::new("cargo");
     cmd.args(["run", "--"]);
 
-    // Test missing environment argument (team is optional due to HONEYCOMB_TEAM env var)
+    // Remove environment variables to test validation
+    cmd.env_remove("HONEYCOMB_TEAM");
+    cmd.env_remove("HONEYCOMB_ENVIRONMENT");
+
+    // Test missing both team and environment when env vars are not set
     cmd.arg("datasets")
         .arg("list")
         .assert()
         .failure()
         .stderr(predicate::str::contains(
-            "the following required arguments were not provided",
-        ))
-        .stderr(predicate::str::contains("--environment <ENVIRONMENT>"));
+            "Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable.",
+        ));
 }
 
 #[tokio::test]
@@ -23,17 +26,19 @@ async fn test_datasets_list_requires_environment() {
     let mut cmd = Command::new("cargo");
     cmd.args(["run", "--"]);
 
-    // Test missing environment argument
+    // Remove team environment variable to test team validation
+    cmd.env_remove("HONEYCOMB_TEAM");
+    // Keep environment variable - it's not required for datasets list
+
+    // Test missing team argument when no HONEYCOMB_TEAM env var is set
+    // Environment is optional for datasets list command
     cmd.arg("datasets")
         .arg("list")
-        .arg("--team")
-        .arg("test-team")
         .assert()
         .failure()
         .stderr(predicate::str::contains(
-            "the following required arguments were not provided",
-        ))
-        .stderr(predicate::str::contains("--environment <ENVIRONMENT>"));
+            "Team is required. Use --team flag or set HONEYCOMB_TEAM environment variable.",
+        ));
 }
 
 #[tokio::test]
@@ -72,7 +77,7 @@ async fn test_datasets_list_help_shows_required_params() {
         .stdout(predicate::str::contains(
             "Team slug (uses HONEYCOMB_TEAM env var if not specified)",
         ))
-        .stdout(predicate::str::contains("Environment slug (required)"));
+        .stdout(predicate::str::contains("Environment slug (uses HONEYCOMB_ENVIRONMENT env var if not specified)"));
 }
 
 /// Test short flags work correctly
