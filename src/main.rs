@@ -25,7 +25,7 @@ use common::OutputFormat;
 #[derive(Parser)]
 #[command(name = "apiary")]
 #[command(author = "Blake")]
-#[command(version = "1.0.0")]
+#[command(version = env!("CARGO_PKG_VERSION"))]
 #[command(about = "A comprehensive CLI for Honeycomb API with dual authentication", long_about = None)]
 struct Cli {
     /// Honeycomb Management API key ID for v2 endpoints (format: hcxmk_...)
