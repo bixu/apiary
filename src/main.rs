@@ -234,62 +234,58 @@ async fn main() -> Result<()> {
 }
 
 fn display_resource_usage() {
-    println!("Apiary - Comprehensive Honeycomb API CLI");
     println!();
-    println!("SUPPORTED HONEYCOMB API RESOURCES:");
-    println!();
-
-    println!("Authentication & Management:");
-    println!("  auth              - Authentication operations and token validation");
-    println!("  api-keys          - API key management (v2 Management API)");
-    println!("  environments      - Environment management (v2 Management API)");
+    println!("Apiary - The Honeycomb API CLI");
     println!();
 
-    println!("Data & Schema:");
-    println!("  datasets          - Dataset management and configuration");
-    println!("  columns           - Column definitions and metadata");
-    println!("  calculated-fields - Derived column calculations");
+    println!("  api-keys            - API key management (v2 Management API)");
+    println!("  auth                - Authentication operations and token validation");
+    println!("  boards              - Dashboard and board management");
+    println!("  burn-alerts         - SLO burn alert configuration");
+    println!("  calculated-fields   - Derived column calculations");
+    println!("  columns             - Column definitions and metadata");
     println!("  dataset-definitions - Dataset schema definitions");
+    println!("  datasets            - Dataset management and configuration");
+    println!("  environments        - Environment management (v2 Management API)");
+    println!("  marker-settings     - Marker display configuration");
+    println!("  markers             - Event marker management");
+    println!("  recipients          - Notification recipient management");
+    println!("  slos                - Service Level Objective management");
+    println!("  triggers            - Alert trigger configuration");
     println!();
 
-    println!("Dashboard & Visualization:");
-    println!("  boards            - Dashboard and board management");
+    println!("Usage:");
+    println!("  apiary <resource> --help            Show help for a specific resource");
+    println!("  apiary <resource> <COMMAND> --help  Show help for a specific command");
     println!();
 
-    println!("Alerting & Monitoring:");
-    println!("  triggers          - Alert trigger configuration");
-    println!("  slos              - Service Level Objective management");
-    println!("  burn-alerts       - SLO burn alert configuration");
-    println!("  recipients        - Notification recipient management");
+    println!("Examples:");
+    println!("  apiary datasets list                        List all datasets");
+    println!("  apiary boards list --help                   Show board listing options");
+    println!("  apiary triggers list --dataset my-dataset   List triggers for a specific dataset");
     println!();
 
-    println!("Visualization & Annotation:");
-    println!("  markers           - Event marker management");
-    println!("  marker-settings   - Marker display configuration");
-    println!();
-
-    println!("USAGE:");
-    println!("  apiary <RESOURCE> --help           Show help for a specific resource");
-    println!("  apiary <RESOURCE> <COMMAND> --help Show help for a specific command");
-    println!();
-
-    println!("EXAMPLES:");
-    println!("  apiary datasets list               List all datasets");
-    println!("  apiary boards list --help          Show board listing options");
-    println!("  apiary triggers list --dataset my-dataset");
-    println!();
-
-    println!("AUTHENTICATION:");
+    println!("Authentication:");
     println!(
-        "  Set HONEYCOMB_MANAGEMENT_API_KEY_ID and HONEYCOMB_MANAGEMENT_API_KEY for v2 endpoints"
+        "  Set HONEYCOMB_MANAGEMENT_API_KEY_ID and HONEYCOMB_MANAGEMENT_API_KEY (v2 endpoints)"
     );
-    println!("  Set HONEYCOMB_CONFIGURATION_API_KEY for v1 endpoints");
-    println!("  Or use --management-key-id / --management-key-secret / --config-key flags");
+    println!("  Set HONEYCOMB_CONFIGURATION_API_KEY (v1 endpoints)");
+    println!();
+    println!(
+        "  Or use flags:
+          --management-key-id
+          --management-key-secret
+          --config-key flags"
+    );
     println!();
 
-    println!("ENDPOINT CONFIGURATION:");
+    println!("Endpoint Configuration:");
     println!("  Set HONEYCOMB_API_ENDPOINT for custom endpoints (e.g., api.eu1.honeycomb.io)");
-    println!("  Or use --api-endpoint / --api-url flags");
+    println!(
+        "  Or use flags:
+          --api-endpoint
+          --api-url flags"
+    );
     println!();
 
     println!("For detailed help on any resource, use: apiary <resource> --help");
