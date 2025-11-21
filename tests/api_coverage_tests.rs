@@ -529,10 +529,12 @@ mod dataset_definitions {
 
         let command = DatasetDefinitionCommands::Get {
             dataset: "test-dataset".to_string(),
+            team: None,
+            environment: None,
             format: OutputFormat::Json,
         };
 
-        let result = command.execute(&client).await;
+        let result = command.execute(&client, None).await;
         assert!(result.is_ok());
     }
 }
