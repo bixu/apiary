@@ -77,7 +77,9 @@ async fn test_datasets_list_help_shows_required_params() {
         .stdout(predicate::str::contains(
             "Team slug (uses HONEYCOMB_TEAM env var if not specified)",
         ))
-        .stdout(predicate::str::contains("Environment slug (uses HONEYCOMB_ENVIRONMENT env var if not specified)"));
+        .stdout(predicate::str::contains(
+            "Environment slug (uses HONEYCOMB_ENVIRONMENT env var if not specified)",
+        ));
 }
 
 /// Test short flags work correctly
