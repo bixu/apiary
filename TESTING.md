@@ -32,5 +32,4 @@ The CI workflow (`.github/workflows/ci.yml`) includes:
 - **Multi-Rust Version Testing**: Tests against stable, beta, and nightly Rust
 - **Code Quality Checks**: Formatting, linting, and security auditing
 - **Cross-Platform Builds**: Linux, macOS, and Windows
-- **Coverage Reports**: Integration with Codecov for coverage tracking
 - **CLI Validation**: Tests actual binary behavior in CI environment
