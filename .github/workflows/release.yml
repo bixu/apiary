@@ -129,7 +129,7 @@ jobs:
           echo "sha256_file=apiary-${RUSTTARGET}.tar.gz.sha256" >> $GITHUB_OUTPUT
 
       - name: Upload SHA256 as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: sha256-${{ matrix.target }}
           path: apiary-${{ matrix.target }}.tar.gz.sha256
