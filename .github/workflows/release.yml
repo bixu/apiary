@@ -154,7 +154,7 @@ jobs:
       sha256_x86_64_unknown_linux_gnu: ${{ steps.collect.outputs.sha256_x86_64_unknown_linux_gnu }}
     steps:
       - name: Download SHA256 artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           pattern: sha256-*
           merge-multiple: true
