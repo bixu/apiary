@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '**/*.rs'
+      - 'Cargo.toml'
+      - '.github/workflows/release.yml'
 
 jobs:
   check_version:
