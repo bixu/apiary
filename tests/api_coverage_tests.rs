@@ -15,8 +15,6 @@ use wiremock::{
 fn create_test_context() -> CommandContext {
     CommandContext {
         team: None,
-        global_format: None,
-        verbose: false,
         key_material: KeyMaterial::default(),
     }
 }
@@ -32,8 +30,6 @@ mod api_keys {
     fn validation_context() -> CommandContext {
         CommandContext {
             team: None,
-            global_format: None,
-            verbose: false,
             key_material: KeyMaterial {
                 management: Some(ManagementKeyMaterial {
                     id: "test-id".to_string(),
@@ -130,8 +126,6 @@ mod api_keys {
 
         let context = CommandContext {
             team: None,
-            global_format: None,
-            verbose: false,
             key_material: KeyMaterial::default(),
         };
 
@@ -178,8 +172,6 @@ mod environments {
 
         let context = CommandContext {
             team: Some("test-team".to_string()),
-            global_format: None,
-            verbose: false,
             key_material: KeyMaterial::default(),
         };
 

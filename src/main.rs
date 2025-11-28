@@ -278,8 +278,6 @@ async fn main() -> Result<()> {
 
     let context = common::CommandContext {
         team: cli.team,
-        global_format: cli.format,
-        verbose: cli.verbose,
         key_material,
     };
 
