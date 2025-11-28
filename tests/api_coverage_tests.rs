@@ -7,8 +7,8 @@ use apiary::client::HoneycombClient;
 use apiary::common::CommandContext;
 use serde_json::json;
 use wiremock::{
-    matchers::{method, path},
     Mock, MockServer, ResponseTemplate,
+    matchers::{method, path},
 };
 
 /// Helper function to create a test CommandContext

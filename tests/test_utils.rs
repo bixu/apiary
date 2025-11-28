@@ -3,8 +3,8 @@
 use apiary::client::HoneycombClient;
 use serde_json::json;
 use wiremock::{
-    matchers::{method, path},
     Mock, MockServer, ResponseTemplate,
+    matchers::{method, path},
 };
 
 /// Create a mock server for testing

@@ -1,6 +1,6 @@
 use crate::client::HoneycombClient;
 use crate::common::{
-    pretty_print_json, read_json_file, CommandContext, OutputFormat, DEFAULT_PRETTY_FORMAT,
+    CommandContext, DEFAULT_PRETTY_FORMAT, OutputFormat, pretty_print_json, read_json_file,
 };
 use anyhow::Result;
 use clap::Subcommand;
