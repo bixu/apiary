@@ -48,7 +48,7 @@ impl HoneycombClient {
 
         // Use appropriate authentication based on endpoint
         if self.is_v2_endpoint(path) {
-            // v2 endpoints use Management Key with Bearer token semantics
+            // v2 endpoints use Management Key with Bearer token
             if let Some(management_key) = &self.management_key {
                 request = request.header("Authorization", format!("Bearer {}", management_key));
             } else {
