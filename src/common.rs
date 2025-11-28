@@ -6,19 +6,11 @@ use serde_json::Value;
 // Constants for consistency
 pub const DEFAULT_TABLE_FORMAT: &str = "table";
 pub const DEFAULT_PRETTY_FORMAT: &str = "pretty";
-#[allow(dead_code)]
-pub const HONEYCOMB_TEAM_ENV: &str = "HONEYCOMB_TEAM";
-#[allow(dead_code)]
-pub const HONEYCOMB_ENVIRONMENT_ENV: &str = "HONEYCOMB_ENVIRONMENT";
 
 // Context for command execution
 #[derive(Debug, Clone)]
 pub struct CommandContext {
     pub team: Option<String>,
-    #[allow(dead_code)]
-    pub global_format: Option<OutputFormat>,
-    #[allow(dead_code)]
-    pub verbose: bool,
 }
 
 // Common utility functions
@@ -34,6 +26,11 @@ pub async fn validate_environment(
     team: &str,
     environment: &str,
 ) -> Result<bool> {
+    if !client.has_management_key() {
+        // v2 environment lookup requires a management key; skip validation so v1 calls can proceed
+        return Ok(true);
+    }
+
     let path = format!("/2/teams/{}/environments", team);
     let response = client.get(&path, None).await?;
 
@@ -99,44 +96,4 @@ impl std::str::FromStr for OutputFormat {
             _ => anyhow::bail!("Invalid output format. Use: json, pretty, or table"),
         }
     }
-}
-
-// Macro for standard team parameter
-#[macro_export]
-macro_rules! team_param {
-    () => {
-        /// Team slug (uses HONEYCOMB_TEAM env var if not specified)
-        #[arg(short, long, env = $crate::common::HONEYCOMB_TEAM_ENV)]
-        team: Option<String>,
-    };
-}
-
-// Macro for standard environment parameter
-#[macro_export]
-macro_rules! environment_param {
-    () => {
-        /// Environment slug (uses HONEYCOMB_ENVIRONMENT env var if not specified)
-        #[arg(short, long, env = $crate::common::HONEYCOMB_ENVIRONMENT_ENV)]
-        environment: Option<String>,
-    };
-}
-
-// Macro for standard format parameter
-#[macro_export]
-macro_rules! format_param {
-    ($default:expr) => {
-        /// Output format
-        #[arg(short, long, default_value = $default)]
-        format: OutputFormat,
-    };
-}
-
-// Helper function to resolve team parameter
-#[allow(dead_code)]
-pub fn resolve_team(local_team: &Option<String>, context: &CommandContext) -> Result<String> {
-    local_team
-        .as_ref()
-        .or(context.team.as_ref())
-        .cloned()
-        .ok_or_else(|| anyhow::anyhow!(errors::messages::TEAM_REQUIRED))
 }

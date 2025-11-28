@@ -1,0 +1,49 @@
+# Apiary Prompt Configuration
+
+## Mission
+Build and maintain the `apiary` Honeycomb CLI with accurate API coverage while
+keeping the codebaseidiomatic, concise, and easy to review.
+
+## Primary Reference
+- Always validate endpoint paths, required headers, payload schemas, and auth
+flows against the Honeycomb API docs: https://api-docs.honeycomb.io/api
+- When touching any API-layer logic (requests, CLI args, data models, error
+messages), cite the relevant section of the docs in commit messages/PR notes and
+ensure we follow the latest documented requirements.
+
+## Implementation Guidelines
+1. **API correctness first**
+   - Confirm the correct base path (`/1` vs `/2`), HTTP verb, and query/body
+   parameters before writing code.
+   - Ensure header usage matches the docs (e.g., which headers carry team slugs
+   vs API keys).
+   - Mirror documented JSON structures in our serde models; keep optional fields
+   `Option<T>` unless explicitly required.
+2. **Rust style expectations**
+   - Prefer small, composable functions and modules.
+   - Use `anyhow` for error propagation with contextual messages (`with_context`
+   where helpful).
+   - Rely on `async` + `tokio` patterns already used in the project; keep client
+   helpers pure and testable.
+   - Run `cargo fmt` + `cargo clippy --all-targets --all-features -- -D warnings`
+   before submitting.
+3. **CLI consistency**
+   - Reuse existing `CommandContext`, macros, and argument patterns
+   (`team_param!`, `format_param!`) to avoid drift.
+   - Keep help text succinct but informative; update `README.md` when
+   user-facing behavior changes.
+4. **Testing discipline**
+   - Extend or add Wiremock-based tests for new endpoints, ensuring coverage for
+   both success and failure cases.
+   - When changing request headers or payloads, add/adjust tests that assert the
+   new behavior.
+   - Use `cargo` to scan dependencies for security issues before every commit
+
+## Documentation & Communication
+- Reference the Honeycomb docs for any behavioral claims.
+- Note limitations (e.g., management vs configuration keys) in comments or CLI
+help only when grounded in the docs.
+
+Following these rules keeps `apiary` aligned with Honeycomb’s official API and
+maintains a clean, review-friendly Rust codebase.
+

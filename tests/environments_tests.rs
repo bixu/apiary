@@ -178,3 +178,18 @@ async fn test_require_valid_environment_failure() {
     assert!(error_message
         .contains("Use 'apiary environments list --team test-team' to see available environments"));
 }
+
+#[tokio::test]
+async fn test_require_valid_environment_without_management_key() {
+    let client = HoneycombClient::new(
+        None,
+        Some("test-config-key".to_string()),
+        Some("http://127.0.0.1:9".to_string()),
+    );
+
+    let result = require_valid_environment(&client, "test-team", "production").await;
+    assert!(
+        result.is_ok(),
+        "Environment validation should be skipped when no management key is present"
+    );
+}

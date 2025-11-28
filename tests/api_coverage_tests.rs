@@ -6,7 +6,6 @@ mod test_utils;
 use apiary::client::HoneycombClient;
 use apiary::common::CommandContext;
 use serde_json::json;
-use test_utils::*;
 use wiremock::{
     matchers::{method, path},
     Mock, MockServer, ResponseTemplate,
@@ -14,64 +13,7 @@ use wiremock::{
 
 /// Helper function to create a test CommandContext
 fn create_test_context() -> CommandContext {
-    CommandContext {
-        team: None,
-        global_format: None,
-        verbose: false,
-    }
-}
-
-/// Test API Keys endpoints
-mod api_keys {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_list_api_keys() {
-        let mock_server = create_mock_server().await;
-
-        mock_successful_list(
-            &mock_server,
-            "/2/teams/test-team/api_keys",
-            sample_api_key_data(),
-        )
-        .await;
-
-        let client = create_test_client(mock_server.uri());
-        let response = client.get("/2/teams/test-team/api_keys", None).await;
-        assert!(response.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_get_api_key() {
-        let mock_server = MockServer::start().await;
-
-        Mock::given(method("GET"))
-            .and(path("/2/teams/test-team/api_keys/key-123"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "data": {
-                    "id": "key-123",
-                    "type": "api_key",
-                    "attributes": {
-                        "name": "Test Key",
-                        "key_type": "management",
-                        "disabled": false
-                    }
-                }
-            })))
-            .mount(&mock_server)
-            .await;
-
-        let client = HoneycombClient::new(
-            Some("test-mgmt-key".to_string()),
-            None,
-            Some(mock_server.uri()),
-        );
-
-        let response = client
-            .get("/2/teams/test-team/api_keys/key-123", None)
-            .await;
-        assert!(response.is_ok());
-    }
+    CommandContext { team: None }
 }
 
 /// Test Environments endpoints
@@ -112,8 +54,6 @@ mod environments {
 
         let context = CommandContext {
             team: Some("test-team".to_string()),
-            global_format: None,
-            verbose: false,
         };
 
         let result = command.execute(&client, &context).await;

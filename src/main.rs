@@ -1,4 +1,3 @@
-mod api_keys;
 mod auth;
 mod boards;
 mod burn_alerts;
@@ -21,6 +20,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use client::HoneycombClient;
 use common::OutputFormat;
+use std::env;
 
 #[derive(Parser)]
 #[command(name = "apiary")]
@@ -138,11 +138,6 @@ enum Commands {
         #[command(subcommand)]
         command: environments::EnvironmentCommands,
     },
-    /// API Key management (v2 API)
-    ApiKeys {
-        #[command(subcommand)]
-        command: api_keys::ApiKeyCommands,
-    },
     /// Calculated Fields (Derived Columns) management
     CalculatedFields {
         #[command(subcommand)]
@@ -218,11 +213,7 @@ async fn main() -> Result<()> {
 
     let client = HoneycombClient::new(management_key, config_key, api_url);
 
-    let context = common::CommandContext {
-        team: cli.team,
-        global_format: cli.format,
-        verbose: cli.verbose,
-    };
+    let context = common::CommandContext { team: cli.team };
 
     match cli.command {
         Some(command) => execute_command(&client, command, &context).await,
@@ -238,7 +229,6 @@ fn display_resource_usage() {
     println!("Apiary - The Honeycomb API CLI");
     println!();
 
-    println!("  api-keys            - API key management (v2 Management API)");
     println!("  auth                - Authentication operations and token validation");
     println!("  boards              - Dashboard and board management");
     println!("  burn-alerts         - SLO burn alert configuration");
@@ -307,7 +297,6 @@ async fn execute_command(
         Commands::Slos { command } => command.execute(client, context).await,
         Commands::BurnAlerts { command } => command.execute(client, context).await,
         Commands::Environments { command } => command.execute(client, context).await,
-        Commands::ApiKeys { command } => command.execute(client, context).await,
         Commands::CalculatedFields { command } => command.execute(client, context).await,
         Commands::DatasetDefinitions { command } => command.execute(client, context).await,
         Commands::MarkerSettings { command } => command.execute(client, context).await,

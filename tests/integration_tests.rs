@@ -106,7 +106,6 @@ async fn test_all_help_commands() {
         vec!["datasets", "--help"],
         vec!["datasets", "list", "--help"],
         vec!["environments", "--help"],
-        vec!["api-keys", "--help"],
     ];
 
     for cmd_args in help_commands {
