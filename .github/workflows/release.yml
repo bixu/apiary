@@ -9,12 +9,13 @@ on:
 
 jobs:
   check_version:
-    name: Check Version and Create Release
+    name: Check Version and Create Draft Release
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
       release_created: ${{ steps.release.outputs.release_created }}
       upload_url: ${{ steps.release.outputs.upload_url }}
+      release_id: ${{ steps.release.outputs.release_id }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -38,7 +39,7 @@ jobs:
             echo "tag_exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create tag and release
+      - name: Create tag and draft release
         id: release
         if: steps.tag_check.outputs.tag_exists == 'false'
         env:
@@ -53,7 +54,7 @@ jobs:
           git tag -a "$TAG_NAME" -m "Release version $VERSION"
           git push origin "$TAG_NAME"
           
-          # Create GitHub release
+          # Create draft GitHub release
           response=$(curl -X POST \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
@@ -63,7 +64,7 @@ jobs:
               \"target_commitish\": \"${{ github.sha }}\",
               \"name\": \"Release $VERSION\",
               \"body\": \"Release version $VERSION\",
-              \"draft\": false,
+              \"draft\": true,
               \"prerelease\": false
             }")
           
@@ -73,7 +74,7 @@ jobs:
           echo "release_created=true" >> $GITHUB_OUTPUT
           echo "upload_url=$upload_url" >> $GITHUB_OUTPUT
           echo "release_id=$release_id" >> $GITHUB_OUTPUT
-          echo "Created release with upload URL: $upload_url"
+          echo "Created draft release with ID: $release_id and upload URL: $upload_url"
 
   apiary:
     name: apiary ${{ matrix.target }}
@@ -136,15 +137,52 @@ jobs:
           name: sha256-${{ matrix.target }}
           path: apiary-${{ matrix.target }}.tar.gz.sha256
 
-      - name: Upload release archive
-        uses: actions/upload-release-asset@v1.0.2
+      - name: Upload release archive as artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: release-archive-${{ matrix.target }}
+          path: apiary-${{ matrix.target }}.tar.gz
+          retention-days: 1
+
+  upload_artifacts:
+    name: Upload Artifacts to Draft Release
+    needs: [check_version, apiary]
+    runs-on: ubuntu-latest
+    if: needs.check_version.outputs.release_created == 'true'
+    steps:
+      - name: Download release archives
+        uses: actions/download-artifact@v6
+        with:
+          pattern: release-archive-*
+          merge-multiple: false
+
+      - name: Upload artifacts to draft release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.check_version.outputs.upload_url }}
-          asset_path: ./apiary-${{ matrix.target }}.tar.gz
-          asset_name: apiary-${{ matrix.target }}.tar.gz
-          asset_content_type: application/gzip
+          UPLOAD_URL: ${{ needs.check_version.outputs.upload_url }}
+        run: |
+          for archive in apiary-*.tar.gz; do
+            if [ -f "$archive" ]; then
+              filename=$(basename "$archive")
+              echo "Uploading $filename to draft release..."
+              # Remove {?name,label} template from upload_url and append name parameter
+              upload_url_base="${UPLOAD_URL%\{*}"
+              response=$(curl -s -w "\n%{http_code}" -X POST \
+                -H "Authorization: token $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                -H "Content-Type: application/gzip" \
+                "$upload_url_base?name=$filename" \
+                --data-binary "@$archive")
+              http_code=$(echo "$response" | tail -n1)
+              if [ "$http_code" -eq 201 ]; then
+                echo "✅ Successfully uploaded $filename"
+              else
+                echo "❌ Failed to upload $filename (HTTP $http_code)"
+                echo "$response" | head -n-1
+                exit 1
+              fi
+            fi
+          done
 
   collect_artifacts:
     needs: [check_version, apiary]
@@ -179,8 +217,27 @@ jobs:
             echo "sha256_x86_64_unknown_linux_gnu=$sha256_x86_64_linux" >> $GITHUB_OUTPUT
           fi
 
+  publish_release:
+    name: Publish Release
+    needs: [check_version, upload_artifacts]
+    runs-on: ubuntu-latest
+    if: needs.check_version.outputs.release_created == 'true'
+    steps:
+      - name: Publish draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.check_version.outputs.release_id }}
+        run: |
+          echo "Publishing release ID: $RELEASE_ID"
+          curl -X PATCH \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID \
+            -d '{"draft": false}'
+          echo "✅ Release published successfully"
+
   trigger-homebrew-update:
-    needs: [check_version, collect_artifacts]
+    needs: [check_version, collect_artifacts, publish_release]
     runs-on: ubuntu-latest
     if: needs.check_version.outputs.release_created == 'true'
     steps:
