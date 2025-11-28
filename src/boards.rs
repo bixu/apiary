@@ -12,7 +12,7 @@ use serde_json::Value;
 pub enum BoardCommands {
     /// List all boards
     List {
-        /// Environment slug (optional, uses HONEYCOMB_ENVIRONMENT env var if not specified)
+        /// Environment slug (uses HONEYCOMB_ENVIRONMENT env var by default, can be overridden with this flag)
         #[arg(short, long, env = "HONEYCOMB_ENVIRONMENT")]
         environment: Option<String>,
         /// Output format
@@ -62,10 +62,20 @@ pub struct Board {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
-    pub style: String,
+    #[serde(rename = "type")]
+    pub board_type: Option<String>,
+    pub panels: Option<Vec<Value>>,
+    pub preset_filters: Option<Vec<Value>>,
+    pub links: Option<Value>,
+    // Legacy fields (for backwards compatibility with older API responses)
+    #[serde(default)]
+    pub style: Option<String>,
+    #[serde(default)]
     pub queries: Vec<BoardQuery>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    #[serde(default)]
+    pub created_at: Option<String>,
+    #[serde(default)]
+    pub updated_at: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -101,30 +111,24 @@ async fn list_boards(
     use crate::common::require_valid_environment;
     use std::collections::HashMap;
 
-    // If environment is provided, validate it exists
-    if let Some(env) = environment {
-        let team = std::env::var("HONEYCOMB_TEAM").unwrap_or_else(|_| "default".to_string());
-        require_valid_environment(client, &team, env).await?;
-    }
+    // Get environment from flag or env var (clap handles env var automatically via env = "HONEYCOMB_ENVIRONMENT")
+    let env = environment.as_ref().ok_or_else(|| {
+        anyhow::anyhow!(
+            "Environment is required. Set HONEYCOMB_ENVIRONMENT environment variable or use --environment flag."
+        )
+    })?;
+
+    // Validate environment exists
+    let team = std::env::var("HONEYCOMB_TEAM").unwrap_or_else(|_| "default".to_string());
+    require_valid_environment(client, &team, env).await?;
 
     let path = "/1/boards";
 
-    // Add environment as query parameter if provided
+    // Always add environment as query parameter
     let mut query_params = HashMap::new();
-    if let Some(env) = environment {
-        query_params.insert("environment".to_string(), env.to_string());
-    }
+    query_params.insert("environment".to_string(), env.to_string());
 
-    let response = client
-        .get(
-            path,
-            if query_params.is_empty() {
-                None
-            } else {
-                Some(&query_params)
-            },
-        )
-        .await?;
+    let response = client.get(path, Some(&query_params)).await?;
 
     match format {
         OutputFormat::Json => {
@@ -136,21 +140,70 @@ async fn list_boards(
         OutputFormat::Table => {
             if let Value::Array(boards) = response {
                 println!(
-                    "{:<15} {:<30} {:<10} {:<20} Created",
-                    "ID", "Name", "Queries", "Style"
+                    "{:<15} {:<40} {:<10} {:<15}",
+                    "ID", "Name", "Panels", "Type"
                 );
-                println!("{:-<85}", "");
+                println!("{:-<80}", "");
 
                 for board in boards {
-                    if let Ok(b) = serde_json::from_value::<Board>(board) {
+                    if let Ok(b) = serde_json::from_value::<Board>(board.clone()) {
+                        let panel_count = b
+                            .panels
+                            .as_ref()
+                            .map(|p| p.len())
+                            .or_else(|| {
+                                if !b.queries.is_empty() {
+                                    Some(b.queries.len())
+                                } else {
+                                    None
+                                }
+                            })
+                            .unwrap_or(0);
+                        let board_type = b
+                            .board_type
+                            .as_deref()
+                            .or(b.style.as_deref())
+                            .unwrap_or("unknown");
+                        let name = if let Some(desc) = &b.description {
+                            format!("{} - {}", b.name, desc)
+                        } else {
+                            b.name
+                        };
+                        // Truncate name if too long
+                        let display_name = if name.len() > 38 {
+                            format!("{}...", &name[..35])
+                        } else {
+                            name
+                        };
                         println!(
-                            "{:<15} {:<30} {:<10} {:<20} {}",
-                            b.id,
-                            b.name,
-                            b.queries.len(),
-                            b.style,
-                            b.created_at.format("%Y-%m-%d")
+                            "{:<15} {:<40} {:<10} {:<15}",
+                            b.id, display_name, panel_count, board_type
                         );
+                    } else {
+                        // Fallback: try to extract basic fields from raw JSON
+                        if let Value::Object(obj) = board {
+                            let id = obj
+                                .get("id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("unknown");
+                            let name = obj
+                                .get("name")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("unknown");
+                            let panel_count = obj
+                                .get("panels")
+                                .and_then(|v| v.as_array())
+                                .map(|a| a.len())
+                                .unwrap_or(0);
+                            let board_type = obj
+                                .get("type")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("unknown");
+                            println!(
+                                "{:<15} {:<40} {:<10} {:<15}",
+                                id, name, panel_count, board_type
+                            );
+                        }
                     }
                 }
             }

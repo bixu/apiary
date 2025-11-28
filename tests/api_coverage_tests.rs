@@ -251,8 +251,29 @@ mod boards {
     async fn test_list_boards() {
         let mock_server = MockServer::start().await;
 
+        // Mock environment validation endpoint
+        Mock::given(method("GET"))
+            .and(path("/2/teams/default/environments"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    {
+                        "id": "env-123",
+                        "type": "environment",
+                        "attributes": {
+                            "name": "Production",
+                            "slug": "production",
+                            "color": "blue"
+                        }
+                    }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock boards list endpoint with environment query parameter
         Mock::given(method("GET"))
             .and(path("/1/boards"))
+            .and(wiremock::matchers::query_param("environment", "production"))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!([
                 {
                     "id": "board-123",
@@ -265,13 +286,13 @@ mod boards {
             .await;
 
         let client = HoneycombClient::new(
-            None,
+            Some("test-key".to_string()),
             Some("test-config-key".to_string()),
             Some(mock_server.uri()),
         );
 
         let command = BoardCommands::List {
-            environment: None,
+            environment: Some("production".to_string()),
             format: OutputFormat::Json,
         };
 
