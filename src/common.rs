@@ -34,6 +34,11 @@ pub async fn validate_environment(
     team: &str,
     environment: &str,
 ) -> Result<bool> {
+    if !client.has_management_key() {
+        // v2 environment lookup requires a management key; skip validation so v1 calls can proceed
+        return Ok(true);
+    }
+
     let path = format!("/2/teams/{}/environments", team);
     let response = client.get(&path, None).await?;
 
