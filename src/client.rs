@@ -48,7 +48,7 @@ impl HoneycombClient {
 
         // Use appropriate authentication based on endpoint
         if self.is_v2_endpoint(path) {
-            // v2 endpoints use Management Key with Bearer token
+            // v2 endpoints use Management Key with Bearer token semantics
             if let Some(management_key) = &self.management_key {
                 request = request.header("Authorization", format!("Bearer {}", management_key));
             } else {
@@ -97,22 +97,22 @@ impl HoneycombClient {
         query_params: Option<&HashMap<String, String>>,
     ) -> Result<Value> {
         let response = self.request(Method::GET, path, query_params, None).await?;
-        self.handle_response(response).await
+        self.handle_response(response, path).await
     }
 
     pub async fn post(&self, path: &str, body: &Value) -> Result<Value> {
         let response = self.request(Method::POST, path, None, Some(body)).await?;
-        self.handle_response(response).await
+        self.handle_response(response, path).await
     }
 
     pub async fn put(&self, path: &str, body: &Value) -> Result<Value> {
         let response = self.request(Method::PUT, path, None, Some(body)).await?;
-        self.handle_response(response).await
+        self.handle_response(response, path).await
     }
 
     pub async fn patch(&self, path: &str, body: &Value) -> Result<Value> {
         let response = self.request(Method::PATCH, path, None, Some(body)).await?;
-        self.handle_response(response).await
+        self.handle_response(response, path).await
     }
 
     pub async fn delete(&self, path: &str) -> Result<()> {
@@ -122,23 +122,36 @@ impl HoneycombClient {
         } else {
             let status = response.status();
             let text = response.text().await.unwrap_or_default();
-            anyhow::bail!("Request failed with status {}: {}", status, text);
+            let url = format!("{}{}", self.base_url, path);
+            anyhow::bail!(
+                "Request failed with status {}: {} (URL: {})",
+                status,
+                text,
+                url
+            );
         }
     }
 
-    async fn handle_response(&self, response: Response) -> Result<Value> {
+    async fn handle_response(&self, response: Response, path: &str) -> Result<Value> {
         let status = response.status();
         let text = response.text().await?;
+        let url = format!("{}{}", self.base_url, path);
 
         if status.is_success() {
             if text.is_empty() {
                 Ok(Value::Null)
             } else {
-                serde_json::from_str(&text)
-                    .with_context(|| format!("Failed to parse JSON response: {}", text))
+                serde_json::from_str(&text).with_context(|| {
+                    format!("Failed to parse JSON response from {}: {}", url, text)
+                })
             }
         } else {
-            anyhow::bail!("Request failed with status {}: {}", status, text);
+            anyhow::bail!(
+                "Request failed with status {}: {} (URL: {})",
+                status,
+                text,
+                url
+            );
         }
     }
 

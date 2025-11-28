@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use apiary::client::HoneycombClient;
 use serde_json::json;
 use wiremock::{
@@ -102,7 +104,16 @@ pub fn sample_api_key_data() -> serde_json::Value {
                     "name": "Test Key",
                     "key_type": "management",
                     "disabled": false,
-                    "environment_id": "env-456"
+                    "created_at": "2023-01-01T00:00:00Z",
+                    "updated_at": "2023-01-01T00:00:00Z"
+                },
+                "relationships": {
+                    "environment": {
+                        "data": {
+                            "id": "env-456",
+                            "type": "environment"
+                        }
+                    }
                 }
             }
         ]

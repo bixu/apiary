@@ -141,7 +141,7 @@ mod not_found {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("GET"))
-            .and(path("/2/teams/test-team/api_keys/nonexistent-key"))
+            .and(path("/2/teams/test-team/api-keys/nonexistent-key"))
             .respond_with(ResponseTemplate::new(404).set_body_json(json!({
                 "error": "API key not found"
             })))
@@ -152,7 +152,7 @@ mod not_found {
             HoneycombClient::new(Some("test-key".to_string()), None, Some(mock_server.uri()));
 
         let response = client
-            .get("/2/teams/test-team/api_keys/nonexistent-key", None)
+            .get("/2/teams/test-team/api-keys/nonexistent-key", None)
             .await;
         assert!(response.is_err());
     }
