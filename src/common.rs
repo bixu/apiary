@@ -2,6 +2,7 @@ use crate::client::HoneycombClient;
 use crate::errors;
 use anyhow::Result;
 use serde_json::Value;
+use std::fmt;
 
 // Constants for consistency
 pub const DEFAULT_TABLE_FORMAT: &str = "table";
@@ -19,6 +20,52 @@ pub struct CommandContext {
     pub global_format: Option<OutputFormat>,
     #[allow(dead_code)]
     pub verbose: bool,
+    #[allow(dead_code)]
+    pub key_material: KeyMaterial,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct KeyMaterial {
+    pub management: Option<ManagementKeyMaterial>,
+    pub configuration: Option<ConfigurationKeyMaterial>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ManagementKeyMaterial {
+    pub id: String,
+    pub source: KeySource,
+    pub masked: bool,
+    pub has_secret: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct ConfigurationKeyMaterial {
+    pub id: String,
+    pub source: KeySource,
+}
+
+#[derive(Debug, Clone)]
+pub enum KeySource {
+    Env(&'static str),
+    Flag(&'static str),
+}
+
+impl fmt::Display for KeySource {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            KeySource::Env(name) => write!(f, "env:{}", name),
+            KeySource::Flag(flag) => write!(f, "flag:{}", flag),
+        }
+    }
+}
+
+pub fn mask_identifier(value: &str) -> String {
+    if value.len() <= 8 {
+        return "*".repeat(value.len());
+    }
+    let prefix = &value[..4];
+    let suffix = &value[value.len() - 4..];
+    format!("{}***{}", prefix, suffix)
 }
 
 // Common utility functions

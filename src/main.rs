@@ -20,7 +20,10 @@ mod triggers;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use client::HoneycombClient;
-use common::OutputFormat;
+use common::{
+    ConfigurationKeyMaterial, KeyMaterial, KeySource, ManagementKeyMaterial, OutputFormat,
+};
+use std::env;
 
 #[derive(Parser)]
 #[command(name = "apiary")]
@@ -164,31 +167,86 @@ enum Commands {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    // Determine which keys to use
-    let management_key =
-        if let (Some(id), Some(secret)) = (&cli.management_key_id, &cli.management_key_secret) {
-            Some(format!("{}:{}", id, secret))
-        } else {
-            // Fall back to api_key if it looks like a management key
-            cli.api_key.as_ref().and_then(|key| {
-                if key.starts_with("hcxmk_") || key.starts_with("hcamk_") {
-                    Some(key.clone())
-                } else {
-                    None
-                }
-            })
-        };
+    let env_management_id = env::var("HONEYCOMB_MANAGEMENT_API_KEY_ID").ok();
+    let env_config_key = env::var("HONEYCOMB_CONFIGURATION_API_KEY").ok();
+    let env_legacy_key = env::var("HONEYCOMB_API_KEY").ok();
 
-    let config_key = cli.config_key.or_else(|| {
-        // Fall back to api_key if it looks like a config key
-        cli.api_key.as_ref().and_then(|key| {
-            if key.starts_with("hcaik_") || (key.len() == 64 && !key.contains(":")) {
-                Some(key.clone())
-            } else {
-                None
+    let mut key_material = KeyMaterial::default();
+    let mut management_key: Option<String> = None;
+    let mut config_key: Option<String> = None;
+    let mut api_key_used_for_management = false;
+
+    if let Some(id) = &cli.management_key_id {
+        let source = determine_source(
+            id,
+            env_management_id.as_deref(),
+            "HONEYCOMB_MANAGEMENT_API_KEY_ID",
+            "--management-key-id",
+        );
+        let has_secret = cli.management_key_secret.is_some();
+        key_material.management = Some(ManagementKeyMaterial {
+            id: id.clone(),
+            source,
+            masked: false,
+            has_secret,
+        });
+        if let Some(secret) = &cli.management_key_secret {
+            management_key = Some(format!("{}:{}", id, secret));
+        }
+    }
+
+    if key_material.management.is_none() {
+        if let Some(api_key) = &cli.api_key {
+            if is_management_key(api_key) {
+                let source = determine_source(
+                    api_key,
+                    env_legacy_key.as_deref(),
+                    "HONEYCOMB_API_KEY",
+                    "--api-key",
+                );
+                key_material.management = Some(ManagementKeyMaterial {
+                    id: api_key.clone(),
+                    source,
+                    masked: true,
+                    has_secret: true,
+                });
+                management_key = Some(api_key.clone());
+                api_key_used_for_management = true;
             }
-        })
-    });
+        }
+    }
+
+    if let Some(cfg_key) = &cli.config_key {
+        let source = determine_source(
+            cfg_key,
+            env_config_key.as_deref(),
+            "HONEYCOMB_CONFIGURATION_API_KEY",
+            "--config-key",
+        );
+        key_material.configuration = Some(ConfigurationKeyMaterial {
+            id: cfg_key.clone(),
+            source,
+        });
+        config_key = Some(cfg_key.clone());
+    }
+
+    if key_material.configuration.is_none() && !api_key_used_for_management {
+        if let Some(api_key) = &cli.api_key {
+            if is_configuration_key(api_key) {
+                let source = determine_source(
+                    api_key,
+                    env_legacy_key.as_deref(),
+                    "HONEYCOMB_API_KEY",
+                    "--api-key",
+                );
+                key_material.configuration = Some(ConfigurationKeyMaterial {
+                    id: api_key.clone(),
+                    source,
+                });
+                config_key = Some(api_key.clone());
+            }
+        }
+    }
 
     // Construct the API URL - prioritize api_url, then construct from api_endpoint
     let api_url = cli.api_url.or_else(|| {
@@ -222,6 +280,7 @@ async fn main() -> Result<()> {
         team: cli.team,
         global_format: cli.format,
         verbose: cli.verbose,
+        key_material,
     };
 
     match cli.command {
@@ -289,6 +348,27 @@ fn display_resource_usage() {
     println!();
 
     println!("For detailed help on any resource, use: apiary <resource> --help");
+}
+
+fn determine_source(
+    value: &str,
+    env_value: Option<&str>,
+    env_label: &'static str,
+    flag_label: &'static str,
+) -> KeySource {
+    if env_value.map(|env_val| env_val == value).unwrap_or(false) {
+        KeySource::Env(env_label)
+    } else {
+        KeySource::Flag(flag_label)
+    }
+}
+
+fn is_management_key(candidate: &str) -> bool {
+    candidate.starts_with("hcxmk_") || candidate.starts_with("hcamk_")
+}
+
+fn is_configuration_key(candidate: &str) -> bool {
+    candidate.starts_with("hcaik_") || candidate.len() == 64
 }
 
 async fn execute_command(

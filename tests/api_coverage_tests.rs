@@ -4,9 +4,8 @@
 mod test_utils;
 
 use apiary::client::HoneycombClient;
-use apiary::common::CommandContext;
+use apiary::common::{CommandContext, KeyMaterial};
 use serde_json::json;
-use test_utils::*;
 use wiremock::{
     matchers::{method, path},
     Mock, MockServer, ResponseTemplate,
@@ -18,59 +17,126 @@ fn create_test_context() -> CommandContext {
         team: None,
         global_format: None,
         verbose: false,
+        key_material: KeyMaterial::default(),
     }
 }
 
 /// Test API Keys endpoints
 mod api_keys {
     use super::*;
+    use apiary::api_keys::ApiKeyCommands;
+    use apiary::common::{
+        ConfigurationKeyMaterial, KeyMaterial, KeySource, ManagementKeyMaterial, OutputFormat,
+    };
 
-    #[tokio::test]
-    async fn test_list_api_keys() {
-        let mock_server = create_mock_server().await;
-
-        mock_successful_list(
-            &mock_server,
-            "/2/teams/test-team/api_keys",
-            sample_api_key_data(),
-        )
-        .await;
-
-        let client = create_test_client(mock_server.uri());
-        let response = client.get("/2/teams/test-team/api_keys", None).await;
-        assert!(response.is_ok());
+    fn validation_context() -> CommandContext {
+        CommandContext {
+            team: None,
+            global_format: None,
+            verbose: false,
+            key_material: KeyMaterial {
+                management: Some(ManagementKeyMaterial {
+                    id: "test-id".to_string(),
+                    source: KeySource::Flag("--management-key-id"),
+                    masked: false,
+                    has_secret: true,
+                }),
+                configuration: Some(ConfigurationKeyMaterial {
+                    id: "hcaik_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"
+                        .to_string(),
+                    source: KeySource::Flag("--config-key"),
+                }),
+            },
+        }
     }
 
     #[tokio::test]
-    async fn test_get_api_key() {
+    async fn test_validate_api_keys_success() {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("GET"))
-            .and(path("/2/teams/test-team/api_keys/key-123"))
+            .and(path("/2/auth"))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
                 "data": {
-                    "id": "key-123",
+                    "id": "test-id",
                     "type": "api_key",
                     "attributes": {
-                        "name": "Test Key",
+                        "name": "Mgmt Key",
                         "key_type": "management",
-                        "disabled": false
+                        "scopes": [],
+                        "disabled": false,
+                        "timestamps": {
+                            "created": "2023-01-01T00:00:00Z",
+                            "updated": "2023-01-01T00:00:00Z"
+                        }
+                    },
+                    "relationships": {
+                        "team": {
+                            "data": {
+                                "type": "teams",
+                                "id": "team-123"
+                            }
+                        }
                     }
-                }
+                },
+                "included": []
+            })))
+            .mount(&mock_server)
+            .await;
+
+        Mock::given(method("GET"))
+            .and(path("/1/auth"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "team": { "name": "test-team" }
             })))
             .mount(&mock_server)
             .await;
 
         let client = HoneycombClient::new(
-            Some("test-mgmt-key".to_string()),
-            None,
+            Some("test-id:test-secret".to_string()),
+            Some(
+                "hcaik_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd".to_string(),
+            ),
             Some(mock_server.uri()),
         );
 
-        let response = client
-            .get("/2/teams/test-team/api_keys/key-123", None)
+        let command = ApiKeyCommands::Validate {
+            format: OutputFormat::Table,
+        };
+
+        let result = command.execute(&client, &validation_context()).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_validate_api_keys_handles_missing_configuration() {
+        let mock_server = MockServer::start().await;
+
+        Mock::given(method("GET"))
+            .and(path("/2/auth"))
+            .respond_with(ResponseTemplate::new(401).set_body_json(json!({
+                "errors": [{
+                    "title": "unauthorized"
+                }]
+            })))
+            .mount(&mock_server)
             .await;
-        assert!(response.is_ok());
+
+        let client = HoneycombClient::new(None, None, Some(mock_server.uri()));
+
+        let command = ApiKeyCommands::Validate {
+            format: OutputFormat::Json,
+        };
+
+        let context = CommandContext {
+            team: None,
+            global_format: None,
+            verbose: false,
+            key_material: KeyMaterial::default(),
+        };
+
+        let result = command.execute(&client, &context).await;
+        assert!(result.is_ok());
     }
 }
 
@@ -114,6 +180,7 @@ mod environments {
             team: Some("test-team".to_string()),
             global_format: None,
             verbose: false,
+            key_material: KeyMaterial::default(),
         };
 
         let result = command.execute(&client, &context).await;
