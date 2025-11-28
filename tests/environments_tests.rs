@@ -2,8 +2,8 @@ use apiary::client::HoneycombClient;
 use apiary::common::{require_valid_environment, validate_environment};
 use serde_json::json;
 use wiremock::{
-    matchers::{method, path},
     Mock, MockServer, ResponseTemplate,
+    matchers::{method, path},
 };
 
 #[tokio::test]
@@ -175,8 +175,11 @@ async fn test_require_valid_environment_failure() {
 
     let error_message = result.unwrap_err().to_string();
     assert!(error_message.contains("Environment 'invalid-env' not found in team 'test-team'"));
-    assert!(error_message
-        .contains("Use 'apiary environments list --team test-team' to see available environments"));
+    assert!(
+        error_message.contains(
+            "Use 'apiary environments list --team test-team' to see available environments"
+        )
+    );
 }
 
 #[tokio::test]

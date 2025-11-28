@@ -4,8 +4,8 @@
 use apiary::client::HoneycombClient;
 use serde_json::json;
 use wiremock::{
-    matchers::{method, path, query_param},
     Mock, MockServer, ResponseTemplate,
+    matchers::{method, path, query_param},
 };
 
 /// Test authentication failures

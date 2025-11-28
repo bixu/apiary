@@ -1,5 +1,5 @@
 use crate::client::HoneycombClient;
-use crate::common::{CommandContext, OutputFormat, DEFAULT_PRETTY_FORMAT};
+use crate::common::{CommandContext, DEFAULT_PRETTY_FORMAT, OutputFormat};
 use anyhow::Result;
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};

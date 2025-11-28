@@ -34,22 +34,22 @@ pub async fn validate_environment(
     let path = format!("/2/teams/{}/environments", team);
     let response = client.get(&path, None).await?;
 
-    if let Value::Object(obj) = response {
-        if let Some(Value::Array(envs)) = obj.get("data") {
-            for env in envs {
-                if let Value::Object(env_obj) = env {
-                    if let Some(Value::Object(attrs)) = env_obj.get("attributes") {
-                        if let Some(Value::String(slug)) = attrs.get("slug") {
-                            if slug == environment {
-                                return Ok(true);
-                            }
-                        }
-                        if let Some(Value::String(name)) = attrs.get("name") {
-                            if name == environment {
-                                return Ok(true);
-                            }
-                        }
-                    }
+    if let Value::Object(obj) = response
+        && let Some(Value::Array(envs)) = obj.get("data")
+    {
+        for env in envs {
+            if let Value::Object(env_obj) = env
+                && let Some(Value::Object(attrs)) = env_obj.get("attributes")
+            {
+                if let Some(Value::String(slug)) = attrs.get("slug")
+                    && slug == environment
+                {
+                    return Ok(true);
+                }
+                if let Some(Value::String(name)) = attrs.get("name")
+                    && name == environment
+                {
+                    return Ok(true);
                 }
             }
         }
