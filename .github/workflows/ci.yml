@@ -9,6 +9,10 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true # Cancel any in-progress runs for this workflow/ref
+
 jobs:
   test:
     name: Test Suite
