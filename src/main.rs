@@ -26,7 +26,7 @@ use std::env;
 #[command(name = "apiary")]
 #[command(author = "Blake")]
 #[command(version = env!("CARGO_PKG_VERSION"))]
-#[command(about = "A comprehensive CLI for Honeycomb API with dual authentication", long_about = None)]
+#[command(about = "A CLI for the Honeycomb API", long_about = None)]
 struct Cli {
     /// Honeycomb Management API key ID for v2 endpoints (format: hcxmk_...)
     #[arg(
