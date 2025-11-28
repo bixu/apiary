@@ -151,12 +151,10 @@ async fn list_boards(
                             .panels
                             .as_ref()
                             .map(|p| p.len())
-                            .or_else(|| {
-                                if !b.queries.is_empty() {
-                                    Some(b.queries.len())
-                                } else {
-                                    None
-                                }
+                            .or(if !b.queries.is_empty() {
+                                Some(b.queries.len())
+                            } else {
+                                None
                             })
                             .unwrap_or(0);
                         let board_type = b
