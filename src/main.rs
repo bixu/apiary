@@ -213,9 +213,7 @@ async fn main() -> Result<()> {
 
     let client = HoneycombClient::new(management_key, config_key, api_url);
 
-    let context = common::CommandContext {
-        team: cli.team,
-    };
+    let context = common::CommandContext { team: cli.team };
 
     match cli.command {
         Some(command) => execute_command(&client, command, &context).await,
@@ -282,7 +280,6 @@ fn display_resource_usage() {
 
     println!("For detailed help on any resource, use: apiary <resource> --help");
 }
-
 
 async fn execute_command(
     client: &HoneycombClient,
