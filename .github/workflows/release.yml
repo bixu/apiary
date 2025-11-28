@@ -154,35 +154,57 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           pattern: release-archive-*
-          merge-multiple: false
+          merge-multiple: true
 
       - name: Upload artifacts to draft release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           UPLOAD_URL: ${{ needs.check_version.outputs.upload_url }}
         run: |
-          for archive in apiary-*.tar.gz; do
-            if [ -f "$archive" ]; then
-              filename=$(basename "$archive")
-              echo "Uploading $filename to draft release..."
-              # Remove {?name,label} template from upload_url and append name parameter
-              upload_url_base="${UPLOAD_URL%\{*}"
-              response=$(curl -s -w "\n%{http_code}" -X POST \
-                -H "Authorization: token $GITHUB_TOKEN" \
-                -H "Accept: application/vnd.github.v3+json" \
-                -H "Content-Type: application/gzip" \
-                "$upload_url_base?name=$filename" \
-                --data-binary "@$archive")
-              http_code=$(echo "$response" | tail -n1)
-              if [ "$http_code" -eq 201 ]; then
-                echo "✅ Successfully uploaded $filename"
-              else
-                echo "❌ Failed to upload $filename (HTTP $http_code)"
-                echo "$response" | head -n-1
-                exit 1
-              fi
+          # Validate upload_url is set
+          if [ -z "$UPLOAD_URL" ] || [ "$UPLOAD_URL" == "null" ]; then
+            echo "❌ Error: upload_url is not set or is null"
+            exit 1
+          fi
+          
+          # Find all tar.gz files (including in subdirectories if merge-multiple didn't work as expected)
+          archives=$(find . -name "apiary-*.tar.gz" -type f)
+          
+          if [ -z "$archives" ]; then
+            echo "❌ Error: No archive files found"
+            echo "Current directory contents:"
+            ls -la
+            echo "Recursive directory contents:"
+            find . -type f
+            exit 1
+          fi
+          
+          echo "Found archives to upload:"
+          echo "$archives"
+          
+          # Remove {?name,label} template from upload_url
+          upload_url_base="${UPLOAD_URL%\{*}"
+          
+          for archive in $archives; do
+            filename=$(basename "$archive")
+            echo "Uploading $filename to draft release..."
+            response=$(curl -s -w "\n%{http_code}" -X POST \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Content-Type: application/gzip" \
+              "$upload_url_base?name=$filename" \
+              --data-binary "@$archive")
+            http_code=$(echo "$response" | tail -n1)
+            if [ "$http_code" -eq 201 ]; then
+              echo "✅ Successfully uploaded $filename"
+            else
+              echo "❌ Failed to upload $filename (HTTP $http_code)"
+              echo "$response" | head -n-1
+              exit 1
             fi
           done
+          
+          echo "✅ All artifacts uploaded successfully"
 
   collect_artifacts:
     needs: [check_version, apiary]
