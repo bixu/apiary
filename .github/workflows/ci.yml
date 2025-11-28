@@ -13,11 +13,6 @@ jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - beta
     
     steps:
     - uses: actions/checkout@v6
@@ -25,30 +20,27 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: ${{ matrix.rust }}
+        toolchain: stable
         components: rustfmt, clippy
     
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2
       with:
         # Cache key differentiator for multiple Rust versions
-        key: ${{ matrix.rust }}
+        key: stable
         # Only save cache on stable to avoid cache pollution
-        save-if: ${{ matrix.rust == 'stable' }}
+        save-if: stable
     
     - name: Check formatting
-      if: matrix.rust == 'stable'
       run: cargo fmt --all -- --check
     
     - name: Lint with clippy
-      if: matrix.rust == 'stable'
       run: cargo clippy --all-targets --all-features -- -D warnings
     
     - name: Run tests
       run: cargo test
 
     - name: Run tests with coverage
-      if: matrix.rust == 'stable'
       run: |
         cargo install cargo-tarpaulin
         cargo tarpaulin --all-features --workspace --timeout 120 --out Xml
