@@ -121,21 +121,7 @@ jobs:
           cp target/${RUSTTARGET}/release/apiary dist/
           tar -czf apiary-${RUSTTARGET}.tar.gz -C dist apiary
           
-          # Calculate SHA256 for Homebrew formula (cross-platform)
-          if command -v sha256sum >/dev/null 2>&1; then
-            sha256sum apiary-${RUSTTARGET}.tar.gz > apiary-${RUSTTARGET}.tar.gz.sha256
-          else
-            shasum -a 256 apiary-${RUSTTARGET}.tar.gz > apiary-${RUSTTARGET}.tar.gz.sha256
-          fi
-          
           echo "archive=apiary-${RUSTTARGET}.tar.gz" >> $GITHUB_OUTPUT
-          echo "sha256_file=apiary-${RUSTTARGET}.tar.gz.sha256" >> $GITHUB_OUTPUT
-
-      - name: Upload SHA256 as artifact
-        uses: actions/upload-artifact@v5
-        with:
-          name: sha256-${{ matrix.target }}
-          path: apiary-${{ matrix.target }}.tar.gz.sha256
 
       - name: Upload release archive as artifact
         uses: actions/upload-artifact@v5
@@ -149,12 +135,62 @@ jobs:
     needs: [check_version, apiary]
     runs-on: ubuntu-latest
     if: needs.check_version.outputs.release_created == 'true'
+    outputs:
+      sha256_aarch64_apple_darwin: ${{ steps.calculate_sha256.outputs.sha256_aarch64_apple_darwin }}
+      sha256_x86_64_apple_darwin: ${{ steps.calculate_sha256.outputs.sha256_x86_64_apple_darwin }}
+      sha256_x86_64_unknown_linux_gnu: ${{ steps.calculate_sha256.outputs.sha256_x86_64_unknown_linux_gnu }}
     steps:
       - name: Download release archives
         uses: actions/download-artifact@v6
         with:
           pattern: release-archive-*
           merge-multiple: true
+
+      - name: Calculate SHA256 hashes
+        id: calculate_sha256
+        run: |
+          # Find all tar.gz files
+          archives=$(find . -name "apiary-*.tar.gz" -type f)
+          
+          if [ -z "$archives" ]; then
+            echo "❌ Error: No archive files found"
+            echo "Current directory contents:"
+            ls -la
+            echo "Recursive directory contents:"
+            find . -type f
+            exit 1
+          fi
+          
+          echo "Calculating SHA256 for archives:"
+          echo "$archives"
+          
+          # Calculate SHA256 for each archive
+          for archive in $archives; do
+            filename=$(basename "$archive")
+            echo "Calculating SHA256 for $filename..."
+            
+            # Calculate SHA256 (cross-platform)
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256=$(sha256sum "$archive" | awk '{print $1}')
+            else
+              sha256=$(shasum -a 256 "$archive" | awk '{print $1}')
+            fi
+            
+            echo "SHA256 for $filename: $sha256"
+            
+            # Set output based on target
+            case "$filename" in
+              *aarch64-apple-darwin*)
+                echo "sha256_aarch64_apple_darwin=$sha256" >> $GITHUB_OUTPUT
+                ;;
+              *x86_64-apple-darwin*)
+                echo "sha256_x86_64_apple_darwin=$sha256" >> $GITHUB_OUTPUT
+                ;;
+              *x86_64-unknown-linux-gnu*)
+                echo "sha256_x86_64_unknown_linux_gnu=$sha256" >> $GITHUB_OUTPUT
+                ;;
+            esac
+          done
 
       - name: Upload artifacts to draft release
         env:
@@ -167,17 +203,8 @@ jobs:
             exit 1
           fi
           
-          # Find all tar.gz files (including in subdirectories if merge-multiple didn't work as expected)
+          # Find all tar.gz files
           archives=$(find . -name "apiary-*.tar.gz" -type f)
-          
-          if [ -z "$archives" ]; then
-            echo "❌ Error: No archive files found"
-            echo "Current directory contents:"
-            ls -la
-            echo "Recursive directory contents:"
-            find . -type f
-            exit 1
-          fi
           
           echo "Found archives to upload:"
           echo "$archives"
@@ -206,39 +233,6 @@ jobs:
           
           echo "✅ All artifacts uploaded successfully"
 
-  collect_artifacts:
-    needs: [check_version, apiary]
-    runs-on: ubuntu-latest
-    if: needs.check_version.outputs.release_created == 'true'
-    outputs:
-      sha256_aarch64_apple_darwin: ${{ steps.collect.outputs.sha256_aarch64_apple_darwin }}
-      sha256_x86_64_apple_darwin: ${{ steps.collect.outputs.sha256_x86_64_apple_darwin }}
-      sha256_x86_64_unknown_linux_gnu: ${{ steps.collect.outputs.sha256_x86_64_unknown_linux_gnu }}
-    steps:
-      - name: Download SHA256 artifacts
-        uses: actions/download-artifact@v6
-        with:
-          pattern: sha256-*
-          merge-multiple: true
-
-      - name: Collect SHA256 hashes
-        id: collect
-        run: |
-          if [ -f "apiary-aarch64-apple-darwin.tar.gz.sha256" ]; then
-            sha256_aarch64=$(cat apiary-aarch64-apple-darwin.tar.gz.sha256 | awk '{print $1}')
-            echo "sha256_aarch64_apple_darwin=$sha256_aarch64" >> $GITHUB_OUTPUT
-          fi
-          
-          if [ -f "apiary-x86_64-apple-darwin.tar.gz.sha256" ]; then
-            sha256_x86_64_darwin=$(cat apiary-x86_64-apple-darwin.tar.gz.sha256 | awk '{print $1}')
-            echo "sha256_x86_64_apple_darwin=$sha256_x86_64_darwin" >> $GITHUB_OUTPUT
-          fi
-          
-          if [ -f "apiary-x86_64-unknown-linux-gnu.tar.gz.sha256" ]; then
-            sha256_x86_64_linux=$(cat apiary-x86_64-unknown-linux-gnu.tar.gz.sha256 | awk '{print $1}')
-            echo "sha256_x86_64_unknown_linux_gnu=$sha256_x86_64_linux" >> $GITHUB_OUTPUT
-          fi
-
   publish_release:
     name: Publish Release
     needs: [check_version, upload_artifacts]
@@ -259,7 +253,7 @@ jobs:
           echo "✅ Release published successfully"
 
   trigger-homebrew-update:
-    needs: [check_version, collect_artifacts, publish_release]
+    needs: [check_version, upload_artifacts, publish_release]
     runs-on: ubuntu-latest
     if: needs.check_version.outputs.release_created == 'true'
     steps:
@@ -268,6 +262,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           echo "Triggering repository dispatch for version: ${{ needs.check_version.outputs.version }}"
+          echo "SHA256 values:"
+          echo "  aarch64-apple-darwin: ${{ needs.upload_artifacts.outputs.sha256_aarch64_apple_darwin }}"
+          echo "  x86_64-apple-darwin: ${{ needs.upload_artifacts.outputs.sha256_x86_64_apple_darwin }}"
+          echo "  x86_64-unknown-linux-gnu: ${{ needs.upload_artifacts.outputs.sha256_x86_64_unknown_linux_gnu }}"
           
           response=$(curl -w "%{http_code}" -s -o /tmp/dispatch_response.json -X POST \
             -H "Authorization: token $GITHUB_TOKEN" \
@@ -280,9 +278,9 @@ jobs:
                 \"version\": \"${{ needs.check_version.outputs.version }}\",
                 \"release_url\": \"https://github.com/${{ github.repository }}/releases/tag/${{ needs.check_version.outputs.version }}\",
                 \"sha\": \"${{ github.sha }}\",
-                \"sha256_aarch64_apple_darwin\": \"${{ needs.collect_artifacts.outputs.sha256_aarch64_apple_darwin }}\",
-                \"sha256_x86_64_apple_darwin\": \"${{ needs.collect_artifacts.outputs.sha256_x86_64_apple_darwin }}\",
-                \"sha256_x86_64_unknown_linux_gnu\": \"${{ needs.collect_artifacts.outputs.sha256_x86_64_unknown_linux_gnu }}\"
+                \"sha256_aarch64_apple_darwin\": \"${{ needs.upload_artifacts.outputs.sha256_aarch64_apple_darwin }}\",
+                \"sha256_x86_64_apple_darwin\": \"${{ needs.upload_artifacts.outputs.sha256_x86_64_apple_darwin }}\",
+                \"sha256_x86_64_unknown_linux_gnu\": \"${{ needs.upload_artifacts.outputs.sha256_x86_64_unknown_linux_gnu }}\"
               }
             }")
           
