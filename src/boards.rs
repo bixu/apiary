@@ -182,10 +182,7 @@ async fn list_boards(
                     } else {
                         // Fallback: try to extract basic fields from raw JSON
                         if let Value::Object(obj) = board {
-                            let id = obj
-                                .get("id")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("unknown");
+                            let id = obj.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
                             let name = obj
                                 .get("name")
                                 .and_then(|v| v.as_str())
