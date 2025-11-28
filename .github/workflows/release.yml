@@ -146,52 +146,6 @@ jobs:
           pattern: release-archive-*
           merge-multiple: true
 
-      - name: Calculate SHA256 hashes
-        id: calculate_sha256
-        run: |
-          # Find all tar.gz files
-          archives=$(find . -name "apiary-*.tar.gz" -type f)
-          
-          if [ -z "$archives" ]; then
-            echo "❌ Error: No archive files found"
-            echo "Current directory contents:"
-            ls -la
-            echo "Recursive directory contents:"
-            find . -type f
-            exit 1
-          fi
-          
-          echo "Calculating SHA256 for archives:"
-          echo "$archives"
-          
-          # Calculate SHA256 for each archive
-          for archive in $archives; do
-            filename=$(basename "$archive")
-            echo "Calculating SHA256 for $filename..."
-            
-            # Calculate SHA256 (cross-platform)
-            if command -v sha256sum >/dev/null 2>&1; then
-              sha256=$(sha256sum "$archive" | awk '{print $1}')
-            else
-              sha256=$(shasum -a 256 "$archive" | awk '{print $1}')
-            fi
-            
-            echo "SHA256 for $filename: $sha256"
-            
-            # Set output based on target
-            case "$filename" in
-              *aarch64-apple-darwin*)
-                echo "sha256_aarch64_apple_darwin=$sha256" >> $GITHUB_OUTPUT
-                ;;
-              *x86_64-apple-darwin*)
-                echo "sha256_x86_64_apple_darwin=$sha256" >> $GITHUB_OUTPUT
-                ;;
-              *x86_64-unknown-linux-gnu*)
-                echo "sha256_x86_64_unknown_linux_gnu=$sha256" >> $GITHUB_OUTPUT
-                ;;
-            esac
-          done
-
       - name: Upload artifacts to draft release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -232,6 +186,74 @@ jobs:
           done
           
           echo "✅ All artifacts uploaded successfully"
+
+      - name: Download and calculate SHA256 from release
+        id: calculate_sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.check_version.outputs.release_id }}
+          VERSION: ${{ needs.check_version.outputs.version }}
+        run: |
+          # Wait a moment for GitHub to process the uploads
+          sleep 3
+          
+          # Get release assets
+          assets_response=$(curl -s \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets")
+          
+          # Create directory for downloaded files
+          mkdir -p downloaded_assets
+          cd downloaded_assets
+          
+          # Process each asset using jq to iterate
+          asset_count=$(echo "$assets_response" | jq 'length')
+          echo "Found $asset_count assets"
+          
+          for i in $(seq 0 $((asset_count - 1))); do
+            filename=$(echo "$assets_response" | jq -r ".[$i].name")
+            url=$(echo "$assets_response" | jq -r ".[$i].browser_download_url")
+            
+            # Only process .tar.gz files
+            if [[ "$filename" != *.tar.gz ]]; then
+              continue
+            fi
+            
+            echo "Downloading $filename from release..."
+            curl -sL -H "Authorization: token $GITHUB_TOKEN" -o "$filename" "$url"
+            
+            if [ ! -f "$filename" ] || [ ! -s "$filename" ]; then
+              echo "❌ Failed to download $filename"
+              exit 1
+            fi
+            
+            echo "Calculating SHA256 for $filename..."
+            
+            # Calculate SHA256 (cross-platform)
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256=$(sha256sum "$filename" | awk '{print $1}')
+            else
+              sha256=$(shasum -a 256 "$filename" | awk '{print $1}')
+            fi
+            
+            echo "SHA256 for $filename: $sha256"
+            
+            # Set output based on target
+            case "$filename" in
+              *aarch64-apple-darwin*)
+                echo "sha256_aarch64_apple_darwin=$sha256" >> $GITHUB_OUTPUT
+                ;;
+              *x86_64-apple-darwin*)
+                echo "sha256_x86_64_apple_darwin=$sha256" >> $GITHUB_OUTPUT
+                ;;
+              *x86_64-unknown-linux-gnu*)
+                echo "sha256_x86_64_unknown_linux_gnu=$sha256" >> $GITHUB_OUTPUT
+                ;;
+            esac
+          done
+          
+          echo "✅ Successfully calculated SHA256 for all assets"
 
   publish_release:
     name: Publish Release
