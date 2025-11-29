@@ -121,7 +121,20 @@ jobs:
           cp target/${RUSTTARGET}/release/apiary dist/
           tar -czf apiary-${RUSTTARGET}.tar.gz -C dist apiary
           
+          # Calculate SHA256 on the built archive (before upload)
+          echo "Calculating SHA256 for apiary-${RUSTTARGET}.tar.gz..."
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256=$(sha256sum apiary-${RUSTTARGET}.tar.gz | awk '{print $1}')
+          else
+            sha256=$(shasum -a 256 apiary-${RUSTTARGET}.tar.gz | awk '{print $1}')
+          fi
+          
+          echo "SHA256 for apiary-${RUSTTARGET}.tar.gz: $sha256"
           echo "archive=apiary-${RUSTTARGET}.tar.gz" >> $GITHUB_OUTPUT
+          echo "sha256=$sha256" >> $GITHUB_OUTPUT
+          
+          # Save SHA256 to file for artifact upload
+          echo "$sha256" > apiary-${RUSTTARGET}.tar.gz.sha256
 
       - name: Upload release archive as artifact
         uses: actions/upload-artifact@v5
@@ -130,21 +143,66 @@ jobs:
           path: apiary-${{ matrix.target }}.tar.gz
           retention-days: 1
 
+      - name: Upload SHA256 as artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: sha256-${{ matrix.target }}
+          path: apiary-${{ matrix.target }}.tar.gz.sha256
+
   upload_artifacts:
     name: Upload Artifacts to Draft Release
     needs: [check_version, apiary]
     runs-on: ubuntu-latest
     if: needs.check_version.outputs.release_created == 'true'
     outputs:
-      sha256_aarch64_apple_darwin: ${{ steps.calculate_sha256.outputs.sha256_aarch64_apple_darwin }}
-      sha256_x86_64_apple_darwin: ${{ steps.calculate_sha256.outputs.sha256_x86_64_apple_darwin }}
-      sha256_x86_64_unknown_linux_gnu: ${{ steps.calculate_sha256.outputs.sha256_x86_64_unknown_linux_gnu }}
+      sha256_aarch64_apple_darwin: ${{ steps.collect_sha256.outputs.sha256_aarch64_apple_darwin }}
+      sha256_x86_64_apple_darwin: ${{ steps.collect_sha256.outputs.sha256_x86_64_apple_darwin }}
+      sha256_x86_64_unknown_linux_gnu: ${{ steps.collect_sha256.outputs.sha256_x86_64_unknown_linux_gnu }}
     steps:
       - name: Download release archives
         uses: actions/download-artifact@v6
         with:
           pattern: release-archive-*
           merge-multiple: true
+
+      - name: Download SHA256 artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: sha256-*
+          merge-multiple: true
+
+      - name: Collect SHA256 values
+        id: collect_sha256
+        run: |
+          # Read SHA256 values from the downloaded files
+          if [ -f "apiary-aarch64-apple-darwin.tar.gz.sha256" ]; then
+            sha256_aarch64=$(cat apiary-aarch64-apple-darwin.tar.gz.sha256 | tr -d '\n\r ')
+            echo "sha256_aarch64_apple_darwin=$sha256_aarch64" >> $GITHUB_OUTPUT
+            echo "Found SHA256 for aarch64-apple-darwin: $sha256_aarch64"
+          else
+            echo "❌ Error: SHA256 file for aarch64-apple-darwin not found"
+            exit 1
+          fi
+          
+          if [ -f "apiary-x86_64-apple-darwin.tar.gz.sha256" ]; then
+            sha256_x86_64_darwin=$(cat apiary-x86_64-apple-darwin.tar.gz.sha256 | tr -d '\n\r ')
+            echo "sha256_x86_64_apple_darwin=$sha256_x86_64_darwin" >> $GITHUB_OUTPUT
+            echo "Found SHA256 for x86_64-apple-darwin: $sha256_x86_64_darwin"
+          else
+            echo "❌ Error: SHA256 file for x86_64-apple-darwin not found"
+            exit 1
+          fi
+          
+          if [ -f "apiary-x86_64-unknown-linux-gnu.tar.gz.sha256" ]; then
+            sha256_x86_64_linux=$(cat apiary-x86_64-unknown-linux-gnu.tar.gz.sha256 | tr -d '\n\r ')
+            echo "sha256_x86_64_unknown_linux_gnu=$sha256_x86_64_linux" >> $GITHUB_OUTPUT
+            echo "Found SHA256 for x86_64-unknown-linux-gnu: $sha256_x86_64_linux"
+          else
+            echo "❌ Error: SHA256 file for x86_64-unknown-linux-gnu not found"
+            exit 1
+          fi
+          
+          echo "✅ Successfully collected all SHA256 values from built files"
 
       - name: Upload artifacts to draft release
         env:
@@ -187,74 +245,6 @@ jobs:
           
           echo "✅ All artifacts uploaded successfully"
 
-      - name: Download and calculate SHA256 from release
-        id: calculate_sha256
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_ID: ${{ needs.check_version.outputs.release_id }}
-          VERSION: ${{ needs.check_version.outputs.version }}
-        run: |
-          # Wait a moment for GitHub to process the uploads
-          sleep 3
-          
-          # Get release assets
-          assets_response=$(curl -s \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets")
-          
-          # Create directory for downloaded files
-          mkdir -p downloaded_assets
-          cd downloaded_assets
-          
-          # Process each asset using jq to iterate
-          asset_count=$(echo "$assets_response" | jq 'length')
-          echo "Found $asset_count assets"
-          
-          for i in $(seq 0 $((asset_count - 1))); do
-            filename=$(echo "$assets_response" | jq -r ".[$i].name")
-            url=$(echo "$assets_response" | jq -r ".[$i].browser_download_url")
-            
-            # Only process .tar.gz files
-            if [[ "$filename" != *.tar.gz ]]; then
-              continue
-            fi
-            
-            echo "Downloading $filename from release..."
-            curl -sL -H "Authorization: token $GITHUB_TOKEN" -o "$filename" "$url"
-            
-            if [ ! -f "$filename" ] || [ ! -s "$filename" ]; then
-              echo "❌ Failed to download $filename"
-              exit 1
-            fi
-            
-            echo "Calculating SHA256 for $filename..."
-            
-            # Calculate SHA256 (cross-platform)
-            if command -v sha256sum >/dev/null 2>&1; then
-              sha256=$(sha256sum "$filename" | awk '{print $1}')
-            else
-              sha256=$(shasum -a 256 "$filename" | awk '{print $1}')
-            fi
-            
-            echo "SHA256 for $filename: $sha256"
-            
-            # Set output based on target
-            case "$filename" in
-              *aarch64-apple-darwin*)
-                echo "sha256_aarch64_apple_darwin=$sha256" >> $GITHUB_OUTPUT
-                ;;
-              *x86_64-apple-darwin*)
-                echo "sha256_x86_64_apple_darwin=$sha256" >> $GITHUB_OUTPUT
-                ;;
-              *x86_64-unknown-linux-gnu*)
-                echo "sha256_x86_64_unknown_linux_gnu=$sha256" >> $GITHUB_OUTPUT
-                ;;
-            esac
-          done
-          
-          echo "✅ Successfully calculated SHA256 for all assets"
-
   publish_release:
     name: Publish Release
     needs: [check_version, upload_artifacts]
@@ -284,7 +274,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           echo "Triggering repository dispatch for version: ${{ needs.check_version.outputs.version }}"
-          echo "SHA256 values:"
+          echo "SHA256 values (calculated from built files):"
           echo "  aarch64-apple-darwin: ${{ needs.upload_artifacts.outputs.sha256_aarch64_apple_darwin }}"
           echo "  x86_64-apple-darwin: ${{ needs.upload_artifacts.outputs.sha256_x86_64_apple_darwin }}"
           echo "  x86_64-unknown-linux-gnu: ${{ needs.upload_artifacts.outputs.sha256_x86_64_unknown_linux_gnu }}"
