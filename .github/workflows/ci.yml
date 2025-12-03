@@ -10,6 +10,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  ALLOW_INSECURE_HONEYCOMB_TEST_URLS: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -42,9 +43,6 @@ jobs:
     
     - name: Lint with clippy
       run: cargo clippy --all-targets --all-features -- -D warnings
-    
-    - name: Run tests
-      run: cargo test
 
     - name: Run tests with coverage
       run: |

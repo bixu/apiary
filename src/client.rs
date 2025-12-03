@@ -18,11 +18,27 @@ impl HoneycombClient {
         config_key: Option<String>,
         base_url: Option<String>,
     ) -> Self {
+        // Default to secure URL if not provided
+        let base_url_string = base_url.unwrap_or_else(|| "https://api.honeycomb.io".to_string());
+        // Deny HTTP URLs unless allowed for testing
+        if base_url_string.starts_with("http://") {
+            // Allow HTTP only if test env var is set
+            use std::env;
+            let insecure_ok = env::var("ALLOW_INSECURE_HONEYCOMB_TEST_URLS")
+                .unwrap_or_else(|_| "false".to_string())
+                == "true";
+            if !insecure_ok {
+                panic!(
+                    "Insecure HTTP base_url provided to HoneycombClient::new: '{}'. Only HTTPS URLs are allowed in production.",
+                    base_url_string
+                );
+            }
+        }
         Self {
             client: Client::new(),
             management_key,
             config_key,
-            base_url: base_url.unwrap_or_else(|| "https://api.honeycomb.io".to_string()),
+            base_url: base_url_string,
         }
     }
 
