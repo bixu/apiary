@@ -24,9 +24,14 @@ impl HoneycombClient {
         if base_url_string.starts_with("http://") {
             // Allow HTTP only if test env var is set
             use std::env;
-            let insecure_ok = env::var("ALLOW_INSECURE_HONEYCOMB_TEST_URLS").unwrap_or_else(|_| "false".to_string()) == "true";
+            let insecure_ok = env::var("ALLOW_INSECURE_HONEYCOMB_TEST_URLS")
+                .unwrap_or_else(|_| "false".to_string())
+                == "true";
             if !insecure_ok {
-                panic!("Insecure HTTP base_url provided to HoneycombClient::new: '{}'. Only HTTPS URLs are allowed in production.", base_url_string);
+                panic!(
+                    "Insecure HTTP base_url provided to HoneycombClient::new: '{}'. Only HTTPS URLs are allowed in production.",
+                    base_url_string
+                );
             }
         }
         Self {

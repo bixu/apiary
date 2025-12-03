@@ -60,7 +60,9 @@ mod authentication {
     #[tokio::test]
     async fn test_missing_required_key() {
         // Allow insecure HTTP URLs for this test
-        std::env::set_var("ALLOW_INSECURE_HONEYCOMB_TEST_URLS", "true");
+        unsafe {
+            std::env::set_var("ALLOW_INSECURE_HONEYCOMB_TEST_URLS", "true");
+        }
         let client = HoneycombClient::new(None, None, Some("http://api.test".to_string()));
 
         // Should fail without any API keys
@@ -266,7 +268,9 @@ mod connectivity {
     #[tokio::test]
     async fn test_connection_timeout() {
         // Allow insecure HTTP URLs for this test
-        std::env::set_var("ALLOW_INSECURE_HONEYCOMB_TEST_URLS", "true");
+        unsafe {
+            std::env::set_var("ALLOW_INSECURE_HONEYCOMB_TEST_URLS", "true");
+        }
         // Use a non-routable IP to simulate connection timeout
         let client = HoneycombClient::new(
             None,
@@ -289,7 +293,9 @@ mod connectivity {
     #[tokio::test]
     async fn test_invalid_hostname() {
         // Allow insecure HTTP URLs for this test
-        std::env::set_var("ALLOW_INSECURE_HONEYCOMB_TEST_URLS", "true");
+        unsafe {
+            std::env::set_var("ALLOW_INSECURE_HONEYCOMB_TEST_URLS", "true");
+        }
         let client = HoneycombClient::new(
             None,
             Some("test-key".to_string()),
