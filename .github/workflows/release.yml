@@ -137,14 +137,14 @@ jobs:
           echo "$sha256" > apiary-${RUSTTARGET}.tar.gz.sha256
 
       - name: Upload release archive as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: release-archive-${{ matrix.target }}
           path: apiary-${{ matrix.target }}.tar.gz
           retention-days: 1
 
       - name: Upload SHA256 as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: sha256-${{ matrix.target }}
           path: apiary-${{ matrix.target }}.tar.gz.sha256
